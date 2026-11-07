@@ -19,48 +19,100 @@ import { verifyFinal } from '../core/api.js';
 import { formatDuration } from '../core/format.js';
 import { DEFAULT_TAUNTS, HINT_SUGGEST } from '../content/story.js';
 
+/** 기획서의 구간 이름 (튜토리얼 1~3 · 본게임 4~6 · 보스 7 · 최종 8) */
+function sectionOf(id) {
+  if (id <= 3) return '튜토리얼';
+  if (id <= 6) return '본게임';
+  if (id === 7) return '보스';
+  return '최종';
+}
+
 export function renderStage(root, { go }) {
   const p = loadProgress();
   if (!p) return go('start');
   if (isFinished(p)) return go('clear');
   const stage = currentStage(p);
 
+  // 화면 순서: 헤더(단계·진행·복구율·기록) → 안내자 말풍선 → 조사 대상(퍼즐) → 정답 입력 → 도발 → 힌트·도구
+  // 퍼즐은 반드시 .puzzle[data-puzzle] 안에 mount 된다 (단계 파일들이 이 구조를 전제로 한다).
+  const percent = recoveryPercent(p);
   root.innerHTML = `
     <section class="stage-screen">
       <header class="stage-header">
-        <span class="stage-label" data-label></span>
-        <span class="recovery">서버 복구율 <strong>${recoveryPercent(p)}%</strong></span>
-        <span class="timer" data-timer></span>
+        <div class="stage-head-main">
+          <p class="stage-kicker" data-kicker></p>
+          <h1 class="stage-title" data-title></h1>
+        </div>
+        <div class="stage-stats">
+          <ol class="steps" data-steps aria-hidden="true"></ol>
+          <span class="recovery">서버 복구율
+            <span class="meter" aria-hidden="true"><span style="width: ${percent}%"></span></span>
+            <strong>${percent}%</strong></span>
+          <span class="clock" title="실제 경과 시간 + 힌트 감점">기록 <span class="timer" data-timer></span></span>
+        </div>
       </header>
+
       <div class="guide" data-guide></div>
-      <div class="puzzle" data-puzzle></div>
-      <p class="taunt" data-taunt hidden></p>
+
+      <figure class="puzzle-frame">
+        <figcaption class="puzzle-bar"><span class="tag">조사 대상</span><span>F12 를 열고 단서를 찾으세요</span></figcaption>
+        <div class="puzzle" data-puzzle></div>
+      </figure>
+
+      <form class="terminal" data-form>
+        <label for="answer">root@horangi:~$</label>
+        <input id="answer" name="answer" autocomplete="off" spellcheck="false" placeholder="찾은 정답을 입력하고 Enter" />
+        <button type="submit" class="run">정답 확인</button>
+      </form>
+
+      <div class="taunt" data-taunt role="status" hidden></div>
+
+      <div class="stage-tools">
+        <button type="button" data-hint>힌트 <span data-hint-count></span></button>
+        <span class="hint-cost" data-hint-cost></span>
+        <button type="button" class="link" data-reset>처음부터 다시</button>
+      </div>
       <ol class="hints" data-hints></ol>
-      <footer class="stage-footer">
-        <form class="terminal" data-form>
-          <label for="answer">root@horangi:~$</label>
-          <input id="answer" name="answer" autocomplete="off" spellcheck="false" />
-        </form>
-        <button type="button" data-hint>힌트</button>
-        <button type="button" data-reset>처음부터 다시</button>
-      </footer>
     </section>`;
 
   const $ = (sel) => root.querySelector(sel);
-  // 대사·힌트에 <!-- --> 같은 문자열이 들어가므로 textContent 로만 넣는다.
-  $('[data-label]').textContent = `STAGE ${stage.id} / ${TOTAL_STAGES} · ${stage.title}`;
+  const make = (tag, props) => Object.assign(document.createElement(tag), props);
 
-  const say = (text) => $('[data-guide]').append(Object.assign(document.createElement('p'), { textContent: text }));
+  // 대사·힌트에 <!-- --> 같은 문자열이 들어가므로 textContent 로만 넣는다.
+  $('[data-kicker]').textContent = `${sectionOf(stage.id)} · STAGE ${stage.id} / ${TOTAL_STAGES}`;
+  $('[data-title]').textContent = stage.title;
+  $('[data-steps]').append(
+    ...Array.from({ length: TOTAL_STAGES }, (_, i) =>
+      make('li', { className: i + 1 < p.stage ? 'done' : i + 1 === p.stage ? 'now' : '' }),
+    ),
+  );
+
+  /** "선배 조교: 대사" 형태면 말풍선 위에 말하는 사람을 적는다. 같은 사람이 이어 말하면 같은 말풍선에 붙인다. */
+  let lastWho = null;
+  let bubble = null;
+  const say = (text) => {
+    const m = /^([^:]{1,10}):\s*(.*)$/s.exec(text);
+    const who = m ? m[1] : null;
+    if (!bubble || !who || who !== lastWho) {
+      bubble = make('div', { className: 'say' });
+      if (who) bubble.append(make('span', { className: 'who', textContent: who }));
+      $('[data-guide]').append(bubble);
+    }
+    bubble.append(make('p', { textContent: m ? m[2] : text }));
+    lastWho = who;
+  };
   const taunt = (text) => {
     const el = $('[data-taunt]');
-    el.textContent = `유령 관리자: ${text}`;
+    el.replaceChildren(make('span', { className: 'who', textContent: '유령 관리자' }), make('p', { textContent: text }));
     el.hidden = false;
   };
   const renderHints = () => {
-    $('[data-hints]').replaceChildren(
-      ...openedHints(p).map((text) => Object.assign(document.createElement('li'), { textContent: text })),
-    );
-    $('[data-hint]').disabled = (p.hints[p.stage] ?? 0) >= stage.hints.length;
+    const used = p.hints[p.stage] ?? 0;
+    const total = stage.hints.length;
+    $('[data-hints]').replaceChildren(...openedHints(p).map((text) => make('li', { textContent: text })));
+    $('[data-hint-count]').textContent = `${used}/${total}`;
+    $('[data-hint]').disabled = used >= total;
+    $('[data-hint-cost]').textContent = used >= total ? '힌트를 모두 열었어요' : `다음 힌트를 열면 기록 +${HINT_PENALTY_MIN[used]}분`;
   };
   stage.guide.forEach(say);
   renderHints();
@@ -81,6 +133,10 @@ export function renderStage(root, { go }) {
   };
 
   const onWrong = () => {
+    // 입력칸을 잠깐 흔들어 오답을 알린다
+    form.classList.remove('wrong');
+    void form.offsetWidth; // 연속 오답에도 애니메이션이 다시 돌도록 리플로우
+    form.classList.add('wrong');
     const count = recordWrong(p);
     const taunts = stage.taunts?.length ? stage.taunts : DEFAULT_TAUNTS;
     taunt(taunts[Math.floor(Math.random() * taunts.length)]);
@@ -97,6 +153,9 @@ export function renderStage(root, { go }) {
 
   const form = $('[data-form]');
   form.hidden = stage.input === false;
+  form.addEventListener('animationend', () => form.classList.remove('wrong'));
+  form.answer.addEventListener('input', () => form.classList.remove('wrong')); // 애니메이션 꺼진 환경 대비
+  if (!form.hidden) form.answer.focus();
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const input = form.answer.value;
