@@ -8,6 +8,7 @@ create table if not exists public.sessions (
   started_at   timestamptz not null default now(),
   finished_at  timestamptz,
   hints_used   integer not null default 0,
+  wrong_attempts integer not null default 0, -- 오답 횟수
   stage_times  jsonb not null default '{}'::jsonb
 );
 

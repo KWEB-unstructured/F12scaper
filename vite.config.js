@@ -18,8 +18,11 @@ function localApi() {
         const name = url.pathname.replace(/^\/+|\/+$/g, '');
         const file = `${API_DIR}${name}.js`;
         // _lib 처럼 _ 로 시작하는 파일은 Vercel에서도 라우트가 아니다.
-        if (!name || name.startsWith('_') || name.includes('/') || !existsSync(file)) return next();
-
+        if (!name || name.startsWith('_') || name.includes('/') || !existsSync(file)) {
+          res.statusCode = 404;
+          res.end('Not Found');
+          return;
+        }
         try {
           // 파일이 바뀌었을 때만 새로 import 한다.
           const mod = await import(`${pathToFileURL(file).href}?v=${statSync(file).mtimeMs}`);
@@ -45,6 +48,8 @@ function localApi() {
 
 async function readJsonBody(req) {
   if (!['POST', 'PUT', 'PATCH'].includes(req.method)) return undefined;
+  const type = req.headers['content-type'] ?? '';
+  if (!type.includes('application/json')) return undefined;
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
   const raw = Buffer.concat(chunks).toString('utf8');
