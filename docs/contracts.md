@@ -62,6 +62,7 @@ export default {
 
 모든 응답은 JSON, `Cache-Control: no-store`. 에러는 `{ error: '코드' }`.
 `.env.local` 에 Supabase 값이 없으면 `mock: true` 가 붙은 가짜 응답을 준다 (프론트 개발용).
+- 405: `{ "error": "method_not_allowed" }` (각 API 제목에 적힌 메서드와 다르게 요청했을 때. 예: POST API 에 GET)
 
 ### POST /api/start
 세션을 만들고 서버 시각으로 시작 시각을 기록.
@@ -79,12 +80,23 @@ export default {
 - 200 오답: `{ "ok": false }`
 - 200 정답: `{ "ok": true, "finalTime": 2450000, "rank": 3 }` — finalTime 은 ms, 이상 기록이면 `rank: null`
 - 400: `{ "error": "invalid_body" | "invalid_session" }`
+- 429: `{ "error": "too_many_attempts" }` (세션당 오답 50번을 넘었을 때)
+
 - 서버 계산: `finalTime = (now - sessions.started_at) + penaltyMsFromHints(hints)` ([src/core/rules.js](../src/core/rules.js) 공용)
+
+검증 규칙
+- 이미 클리어한 세션: 정답을 다시 검사하지 않고 처음 저장된 `{ ok: true, finalTime, rank }` 를 그대로 돌려준다.
+- 오답 제한: 오답마다 세션의 오답 횟수를 1 올린다. 50번을 넘으면 정답 여부와 상관없이 429.
+- hints: 키는 단계 번호 1~8, 값은 0~3 정수. 벗어나면 400 `invalid_body`.
+- 이상 기록: 시작(`sessions.started_at`)부터 1분 안에 클리어하면 기록은 저장하되 랭킹에 넣지 않고 `rank: null`. 기준은 4주차 테스트 후 결정.
+
+알려진 한계
+- 힌트 개수는 클라이언트가 보낸 값을 믿는다. 0으로 줄여 보내면 막을 수 없다. 개선안은 [backlog.md](backlog.md).
 
 ### GET /api/ranking
 - 200: `{ "rankings": [{ "rank": 1, "nickname": "호랑이", "finalTime": 1820000, "hintsUsed": 0 }] }` (상위 50명, finalTime 오름차순)
 
 ## 4. DB ([supabase/schema.sql](../supabase/schema.sql))
-- `sessions(id, nickname, started_at, finished_at, hints_used, stage_times)`
+- `sessions(id, nickname, started_at, finished_at, hints_used, wrong_attempts, stage_times)`
 - `rankings(session_id, nickname, final_time, hints_used, created_at)`
 - RLS 켜고 정책 없음 → service_role(서버)만 접근.
