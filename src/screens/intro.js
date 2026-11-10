@@ -4,9 +4,12 @@
 // (F12 여는 법 안내는 없앴다. 플레이어가 프롤로그 안에서 스스로 F12 를 누르게 만드는 게 목표)
 import { LOGIN } from '../content/story.js';
 import { savePrologue } from './prologue-state.js';
+import { BACKDROP } from './start.js';
 
 export function renderIntro(root, { go }) {
+  // 시작 화면과 같은 흐린 도서관 배경 위에 로그인 창을 띄운다 (도서관 PC 로그인 느낌)
   root.innerHTML = `
+    ${BACKDROP}
     <section class="screen intro-screen">
       <div class="screen-bar"><span data-bar></span></div>
       <h1 data-title></h1>

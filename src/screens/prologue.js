@@ -311,6 +311,7 @@ export function renderPrologue(root, { go }) {
       opened = true;
       clearTimeout(nudgeTimer);
       $('[data-nudge]').hidden = true;
+      $('[data-corner]').hidden = true;
       for (const { key, delay } of AFTER_F12) {
         if (state.printed.includes(key)) continue;
         await wait(delay);
@@ -342,11 +343,11 @@ export function renderPrologue(root, { go }) {
       q.hidden = true;
     }
     await wait(500);
+    // 구석 안내: 지직거리며 나타난 뒤 개발자 도구를 열 때까지 남아 있다 (작게 1초만 보이면 놓치기 쉬움)
     const corner = $('[data-corner]');
     corner.textContent = TRAPPED.corner;
     corner.hidden = false;
-    await wait(1100);
-    corner.hidden = true;
+    await wait(1200);
     if (opened) return;
 
     // 메뉴·우클릭으로 개발자 도구를 열면 keydown 이 오지 않는다 → 다음 상호작용 때 출력 (폴백)
