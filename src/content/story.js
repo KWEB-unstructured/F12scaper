@@ -34,6 +34,26 @@ export const LOGIN = {
 /** 정답 입력창 앞 프롬프트 */
 export const PROMPT = 'guest@the-archive:~$';
 
+/** 단계 화면의 사이트 주소. 단계 번호로 만든다 (퍼즐 내용이 드러나지 않게 중립적인 이름) */
+export const stageUrl = (id) => `http://the-archive.invalid/room/${id}`;
+
+/** 단계 화면 버튼·확인 창 문구 */
+export const GAME_UI = {
+  askBrowser: '브라우저에게 묻기',
+  askMeta: (used, total, nextMin) => (used >= total ? `${used}/${total}` : `${used}/${total} · +${nextMin}분`),
+  hintTitle: (n) => `힌트 ${n}을 열까요?`,
+  hintBody: (min) => `브라우저가 힌트를 알려 주지만, 기록에 ${min}분이 더해집니다.`,
+  hintOk: '힌트 열기',
+  menu: '메뉴',
+  reset: '처음부터 다시',
+  resetTitle: '처음부터 다시 시작할까요?',
+  resetBody: '진행 상황과 기록이 모두 지워집니다.',
+  resetOk: '지우고 다시 시작',
+  cancel: '취소',
+  submit: '실행',
+  placeholder: '찾은 정답을 입력하고 Enter',
+};
+
 /** 클리어 화면 제목. TODO(형씨): 결말 미정 — 결말이 정해지면 바꾼다 */
 export const CLEAR_TITLE = '탈출 성공';
 
