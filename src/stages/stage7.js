@@ -9,7 +9,7 @@ export default {
   title: '0.1초의 정답',
   tool: 'Sources — 중단점',
   toolUsage: '코드 실행을 멈추고 그 순간의 변수 값을 확인하며 버그를 추적한다.',
-  guide: ['선배 조교: TODO 대사'],
+  guide: ['TODO 대사'],
   answerHash: '350a75e9fcb0481ffdbb5d30517265700a8f9fa6b9bab5a0fdf9ad849a2377ce', // 임시 정답 test7
   hints: ['TODO 힌트 1', 'TODO 힌트 2', 'TODO 힌트 3'],
   mount(el) {

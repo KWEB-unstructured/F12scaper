@@ -8,7 +8,7 @@ export default {
   title: '권한이 없습니다',
   tool: 'Application — 쿠키',
   toolUsage: '로그인·세션 문제를 디버깅할 때 쿠키와 저장소 값을 확인하고 지운다.',
-  guide: ['선배 조교: TODO 대사'],
+  guide: ['TODO 대사'],
   answerHash: '9e5da9f5a25c648ab528f6bdc871ff39fae642b24d1a39f0366021e93692f9aa', // 임시 정답 test4
   hints: ['쿠키는 어디에 저장될까?', 'TODO 힌트 2', 'TODO 힌트 3'],
   mount(el) {
