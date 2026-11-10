@@ -1,5 +1,6 @@
 // 담당: 정씨(화면 구성·디자인) · 형씨(진행 규칙은 core/game.js)
-// 단계 화면: 안내자 대사, 퍼즐 영역, 정답 입력창, 힌트 버튼, 타이머, 서버 복구율
+// 단계 화면: 안내자(브라우저) 대사, 퍼즐 영역, 정답 입력창, 힌트 버튼, 타이머, 진행률
+// 화자 이름·진행률 라벨·프롬프트는 content/ 데이터 파일에서 읽는다 (스토리가 바뀌어도 이 파일은 그대로)
 import {
   currentStage,
   recoveryPercent,
@@ -17,7 +18,8 @@ import {
 import { loadProgress, resetProgress } from '../core/state.js';
 import { verifyFinal } from '../core/api.js';
 import { formatDuration } from '../core/format.js';
-import { DEFAULT_TAUNTS, HINT_SUGGEST } from '../content/story.js';
+import { DEFAULT_TAUNTS, HINT_SUGGEST, PROMPT, SERVER_DOWN, TOO_MANY_ATTEMPTS } from '../content/story.js';
+import { SPEAKERS, DEFAULT_SPEAKER, PROGRESS_LABEL, wrongAlertTitle } from '../content/characters.js';
 
 /** 기획서의 구간 이름 (튜토리얼 1~3 · 본게임 4~6 · 보스 7 · 최종 8) */
 function sectionOf(id) {
@@ -33,7 +35,7 @@ export function renderStage(root, { go }) {
   if (isFinished(p)) return go('clear');
   const stage = currentStage(p);
 
-  // 화면 순서: 헤더(단계·진행·복구율·기록) → 안내자 말풍선 → 조사 대상(퍼즐) → 정답 입력 → 도발 → 힌트·도구
+  // 화면 순서: 헤더(단계·진행·진행률·기록) → 브라우저 말풍선 → 조사 대상(퍼즐) → 정답 입력 → 보안 경고 → 힌트·도구
   // 퍼즐은 반드시 .puzzle[data-puzzle] 안에 mount 된다 (단계 파일들이 이 구조를 전제로 한다).
   const percent = recoveryPercent(p);
   root.innerHTML = `
@@ -45,7 +47,7 @@ export function renderStage(root, { go }) {
         </div>
         <div class="stage-stats">
           <ol class="steps" data-steps aria-hidden="true"></ol>
-          <span class="recovery">서버 복구율
+          <span class="recovery"><span data-progress-label></span>
             <span class="meter" aria-hidden="true"><span style="width: ${percent}%"></span></span>
             <strong>${percent}%</strong></span>
           <span class="clock" title="실제 경과 시간 + 힌트 감점">기록 <span class="timer" data-timer></span></span>
@@ -60,7 +62,7 @@ export function renderStage(root, { go }) {
       </figure>
 
       <form class="terminal" data-form>
-        <label for="answer">root@horangi:~$</label>
+        <label for="answer" data-prompt></label>
         <input id="answer" name="answer" autocomplete="off" spellcheck="false" placeholder="찾은 정답을 입력하고 Enter" />
         <button type="submit" class="run">정답 확인</button>
       </form>
@@ -72,7 +74,7 @@ export function renderStage(root, { go }) {
         <span class="hint-cost" data-hint-cost></span>
         <button type="button" class="link" data-reset>처음부터 다시</button>
       </div>
-      <ol class="hints" data-hints></ol>
+      <div class="hints" data-hints></div>
     </section>`;
 
   const $ = (sel) => root.querySelector(sel);
@@ -81,35 +83,58 @@ export function renderStage(root, { go }) {
   // 대사·힌트에 <!-- --> 같은 문자열이 들어가므로 textContent 로만 넣는다.
   $('[data-kicker]').textContent = `${sectionOf(stage.id)} · STAGE ${stage.id} / ${TOTAL_STAGES}`;
   $('[data-title]').textContent = stage.title;
+  $('[data-progress-label]').textContent = PROGRESS_LABEL;
+  $('[data-prompt]').textContent = PROMPT;
   $('[data-steps]').append(
     ...Array.from({ length: TOTAL_STAGES }, (_, i) =>
       make('li', { className: i + 1 < p.stage ? 'done' : i + 1 === p.stage ? 'now' : '' }),
     ),
   );
 
-  /** "선배 조교: 대사" 형태면 말풍선 위에 말하는 사람을 적는다. 같은 사람이 이어 말하면 같은 말풍선에 붙인다. */
-  let lastWho = null;
+  /** 말풍선 하나. speaker 는 content/characters.js 의 SpeakerKey */
+  const bubbleOf = (speaker, label) => {
+    const el = make('div', { className: 'say' });
+    el.dataset.speaker = speaker;
+    el.append(make('span', { className: 'who', textContent: label ?? SPEAKERS[speaker]?.name ?? '' }));
+    return el;
+  };
+
+  /**
+   * 대사 한 줄. 문자열이면 기본 화자(브라우저), { speaker, text } 면 그 화자.
+   * 같은 화자가 이어 말하면 같은 말풍선에 붙인다.
+   */
+  let lastSpeaker = null;
   let bubble = null;
-  const say = (text) => {
-    const m = /^([^:]{1,10}):\s*(.*)$/s.exec(text);
-    const who = m ? m[1] : null;
-    if (!bubble || !who || who !== lastWho) {
-      bubble = make('div', { className: 'say' });
-      if (who) bubble.append(make('span', { className: 'who', textContent: who }));
+  const say = (line) => {
+    const { speaker = DEFAULT_SPEAKER, text } = typeof line === 'string' ? { text: line } : line;
+    if (!bubble || speaker !== lastSpeaker) {
+      bubble = bubbleOf(speaker);
       $('[data-guide]').append(bubble);
     }
-    bubble.append(make('p', { textContent: m ? m[2] : text }));
-    lastWho = who;
+    bubble.append(make('p', { textContent: text }));
+    lastSpeaker = speaker;
   };
-  const taunt = (text) => {
+
+  /** 보안 시스템 경고. count 가 있으면 "비인가 접근 감지 (n회)" 제목을 붙인다 */
+  const taunt = (text, count) => {
     const el = $('[data-taunt]');
-    el.replaceChildren(make('span', { className: 'who', textContent: '유령 관리자' }), make('p', { textContent: text }));
+    el.dataset.speaker = 'security';
+    el.replaceChildren(make('span', { className: 'who', textContent: SPEAKERS.security.name }));
+    if (count) el.append(make('p', { className: 'alert-title', textContent: wrongAlertTitle(count) }));
+    el.append(make('p', { textContent: text }));
     el.hidden = false;
   };
   const renderHints = () => {
     const used = p.hints[p.stage] ?? 0;
     const total = stage.hints.length;
-    $('[data-hints]').replaceChildren(...openedHints(p).map((text) => make('li', { textContent: text })));
+    // 힌트는 브라우저가 말한다
+    $('[data-hints]').replaceChildren(
+      ...openedHints(p).map((text, i) => {
+        const el = bubbleOf('browser', `${SPEAKERS.browser.name} · 힌트 ${i + 1}`);
+        el.append(make('p', { textContent: text }));
+        return el;
+      }),
+    );
     $('[data-hint-count]').textContent = `${used}/${total}`;
     $('[data-hint]').disabled = used >= total;
     $('[data-hint-cost]').textContent = used >= total ? '힌트를 모두 열었어요' : `다음 힌트를 열면 기록 +${HINT_PENALTY_MIN[used]}분`;
@@ -139,7 +164,7 @@ export function renderStage(root, { go }) {
     form.classList.add('wrong');
     const count = recordWrong(p);
     const taunts = stage.taunts?.length ? stage.taunts : DEFAULT_TAUNTS;
-    taunt(taunts[Math.floor(Math.random() * taunts.length)]);
+    taunt(taunts[Math.floor(Math.random() * taunts.length)], count);
     if (count === WRONG_BEFORE_HINT_SUGGEST && !p.hints[p.stage]) say(HINT_SUGGEST);
   };
 
@@ -147,7 +172,7 @@ export function renderStage(root, { go }) {
     complete: solve,
     verify: (input) => checkAnswer(stage, input),
     say,
-    taunt,
+    taunt: (text) => taunt(text),
     fragments: Object.freeze({ ...p.fragments }),
   });
 
@@ -173,8 +198,8 @@ export function renderStage(root, { go }) {
         if (!res.ok) return onWrong();
         p.result = { finalTime: res.finalTime, rank: res.rank };
         solve(input);
-      } catch {
-        taunt('서버가 응답하지 않는다... 잠시 후 다시 입력해 봐.');
+      } catch (err) {
+        taunt(err.status === 429 ? TOO_MANY_ATTEMPTS : SERVER_DOWN);
       }
       return;
     }

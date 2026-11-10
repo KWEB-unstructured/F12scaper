@@ -10,14 +10,14 @@ export default {
   title: '남겨진 함수',
   tool: 'Console',
   toolUsage: '페이지의 변수와 함수를 직접 호출해 보며 동작을 확인하고 에러 로그를 읽는다.',
-  guide: ['선배 조교: 이번엔 Console 탭이야. 뭔가 로그가 찍혀 있을걸?'],
+  guide: ['이번엔 Console 탭이야. 뭔가 로그가 찍혀 있을걸?'],
   answerHash: '305ca66f5c2b134ee6bf23de834aa699de6f1f2f7b093569f7698f1979d9f300', // TODO(형씨): 임시 정답 test3
   input: false,
   hints: ['TODO 힌트 1', 'TODO 힌트 2', 'TODO 힌트 3'],
   mount(el, ctx) {
     // TODO(형씨): 열쇠를 페이지 제목에 숨기는 방식 확정
     document.title = `${ORIGINAL_TITLE} [key:test3]`;
-    el.innerHTML = `<p class="puzzle-text">관리자 콘솔이 응답하지 않는다.</p>`;
+    el.innerHTML = `<p class="puzzle-text">잠긴 열람실 문이 응답하지 않는다.</p>`;
     console.log('%c[system] unlock(key) 함수가 아직 남아 있습니다.', 'color:#0a0');
 
     window.unlock = async (key) => {
@@ -25,7 +25,7 @@ export default {
         console.log('[system] 잠금 해제.');
         ctx.complete(String(key));
       } else {
-        console.warn('[유령 관리자] 그 열쇠가 아닌데?');
+        console.warn('[보안 시스템] 일치하지 않는 열쇠입니다. 이 시도는 기록됩니다.');
       }
     };
 
