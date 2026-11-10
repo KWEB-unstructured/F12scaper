@@ -506,41 +506,50 @@ input:focus {
   flex: 1 1 200px;
 }
 
-/* ───────── 8. 단계 화면 공통 (퍼즐 내용은 stages.css) ─────────
-   위에서 아래로: 헤더 → 안내자 말풍선 → 조사 대상(퍼즐) → 정답 입력 → 도발 → 힌트·도구 */
-.stage-screen {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
+/* ───────── 8. 단계 화면 (퍼즐 내용은 stages.css) ─────────
+   화면 전체를 쓰는 게임 화면: 상단 HUD → 가운데 사이트 창(주소창·정보 표시줄·퍼즐) → 아래 입력 줄 */
+.game {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  background:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.012) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 30%, #121a24 0%, #06080b 70%);
 }
 
-/* 헤더: 왼쪽 단계 이름, 오른쪽 진행 상태 */
-.stage-header {
+/* ── 상단 HUD ── */
+.hud {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-4) var(--space-6);
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--border);
-}
-.stage-kicker {
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgb(16 21 28 / 0.9);
   font-size: var(--fs-sm);
   color: var(--muted);
-  letter-spacing: 0.02em;
 }
-.stage-title {
-  margin-top: var(--space-1);
-  font-size: 1.75rem;
-  color: var(--accent);
-}
-.stage-stats {
+.hud-stage {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-2);
-  font-size: var(--fs-sm);
-  color: var(--muted);
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-right: auto;
+  min-width: 0;
+}
+.hud-kicker {
+  white-space: nowrap;
+}
+.hud-title {
+  font-size: 1.15rem;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* 8칸 진행 점: 푼 단계 초록, 지금 단계 앰버 */
 .steps {
@@ -551,7 +560,7 @@ input:focus {
   list-style: none;
 }
 .steps li {
-  width: 18px;
+  width: 16px;
   height: 6px;
   border-radius: 3px;
   background: var(--border);
@@ -561,6 +570,7 @@ input:focus {
 }
 .steps li.now {
   background: var(--accent);
+  box-shadow: 0 0 8px rgb(245 165 36 / 0.6);
 }
 .recovery {
   display: flex;
@@ -571,7 +581,7 @@ input:focus {
   color: var(--ok);
 }
 .meter {
-  width: 96px;
+  width: 88px;
   height: 6px;
   border-radius: 3px;
   background: var(--border);
@@ -587,135 +597,158 @@ input:focus {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+.hud-menu {
+  position: relative;
+}
+.hud-menu-btn {
+  padding: 2px var(--space-3);
+  font-size: 1rem;
+}
+.hud-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--space-1));
+  z-index: 5;
+  min-width: 160px;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.5);
+}
+.hud-menu-list button {
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--danger);
+}
+.hud-menu-list button:hover {
+  background: rgb(255 107 107 / 0.08);
+}
 
-/* 안내자 말풍선 */
-.guide {
+/* ── 가운데: 갇힌 사이트 창 ── */
+.site {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.5);
+  overflow: hidden;
+}
+.site-chrome {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+}
+.site-nav {
+  color: #3d4a5a;
+  letter-spacing: 4px;
+  white-space: nowrap;
+}
+.site-url {
+  flex: 1;
+  display: flex;
+  align-items: center;
   gap: var(--space-2);
-}
-.guide:empty {
-  display: none;
-}
-.say {
-  max-width: 680px;
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid rgb(245 165 36 / 0.35);
-  border-radius: 2px var(--radius) var(--radius) var(--radius);
-  background: rgb(245 165 36 / 0.06);
-}
-.say p + p {
-  margin-top: var(--space-1);
-}
-.who {
-  display: block;
-  margin-bottom: var(--space-1);
+  min-width: 0;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
   font-size: var(--fs-sm);
-  font-weight: 700;
+}
+.site-url span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-info-btn {
+  padding: 0 var(--space-1);
+  border: 0;
+  background: none;
   color: var(--accent);
-}
-.who:empty {
-  display: none;
-}
-/* 화자별 색 (data-speaker = content/characters.js 의 SpeakerKey) */
-[data-speaker='security'] {
-  --speaker: var(--danger);
-}
-[data-speaker='unknown'] {
-  --speaker: var(--unknown);
-}
-[data-speaker='narration'] {
-  --speaker: var(--muted);
-}
-.say[data-speaker] {
-  border-color: color-mix(in srgb, var(--speaker, var(--accent)) 40%, transparent);
-  background: color-mix(in srgb, var(--speaker, var(--accent)) 7%, transparent);
-}
-[data-speaker] .who {
-  color: var(--speaker, var(--accent));
+  font-size: 1rem;
 }
 
-/* 대사창 (ui/dialogue.js). 프롤로그와 이후 연출에서 같이 쓴다 */
-.dlg {
-  position: relative;
-  min-height: 7.5em;
-  padding: var(--space-4) var(--space-5) var(--space-5);
-  border: 1px solid color-mix(in srgb, var(--speaker, var(--accent)) 55%, transparent);
-  border-radius: var(--radius);
-  background: rgb(10 13 18 / 0.92);
-  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
-  cursor: pointer;
-  user-select: none;
+/* 정보 표시줄: 브라우저가 말하는 곳 (실제 크롬의 "번역할까요?" 줄처럼 주소창 아래에 내려온다) */
+.infobar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid color-mix(in srgb, var(--speaker, var(--accent)) 40%, transparent);
+  background: color-mix(in srgb, var(--speaker, var(--accent)) 9%, var(--panel));
 }
-.dlg-who {
+.infobar.is-new {
+  animation: infobar-in 0.35s ease-out;
+}
+@keyframes infobar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+.infobar-icon {
+  color: var(--speaker, var(--accent));
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+.infobar-body {
+  flex: 1;
+  min-width: 0;
+}
+.infobar-who {
   display: block;
-  margin-bottom: var(--space-2);
   font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--speaker, var(--accent));
 }
-.dlg-who:empty {
-  display: none;
+.infobar-text p + p {
+  margin-top: var(--space-1);
 }
-.dlg-text {
-  font-size: 1.05rem;
-  line-height: 1.7;
+.infobar-pager {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  white-space: nowrap;
 }
-[data-speaker='narration'] .dlg-text {
-  color: var(--fg);
-}
-.dlg-next {
-  position: absolute;
-  right: var(--space-5);
-  bottom: var(--space-3);
-  color: var(--accent);
-  animation: blink 1s steps(1) infinite;
-}
-.dlg.typing .dlg-next {
-  visibility: hidden;
-}
-.dlg-skip {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-3);
-  padding: 2px var(--space-2);
+.infobar-pager button,
+.infobar-close {
+  padding: 0 var(--space-2);
   border: 0;
   background: none;
   color: var(--muted);
-  font-size: var(--fs-sm);
+  font-size: 1.1rem;
 }
-.dlg-skip:hover {
+.infobar-pager button:hover:not(:disabled),
+.infobar-close:hover {
   color: var(--fg);
 }
 
-/* 조사 대상: 점선 테두리 + 제목 줄로 UI 와 구분한다 */
-.puzzle-frame {
-  margin: 0;
-  border: 1px dashed rgb(245 165 36 / 0.55);
-  border-radius: var(--radius);
-  background: var(--panel);
-}
-.puzzle-bar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  border-bottom: 1px dashed rgb(245 165 36 / 0.35);
-  font-size: var(--fs-sm);
-  color: var(--muted);
-}
-.puzzle-bar .tag {
-  color: var(--accent);
-  font-weight: 700;
-}
+/* 퍼즐 = 사이트 페이지. 단계 파일이 .puzzle[data-puzzle] 안에 그린다 */
 .puzzle {
-  min-height: 220px;
-  padding: var(--space-6);
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: clamp(var(--space-5), 4vw, var(--space-7));
 }
 
-/* 정답 입력: 프롬프트 + 입력칸 + 확인 버튼을 초록 테두리 한 줄로 묶는다 */
+/* ── 아래: 정답 입력 + 브라우저에게 묻기 ── */
+.game-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
 .terminal {
+  flex: 1 1 360px;
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -778,15 +811,111 @@ input:focus {
     transform: translateX(-3px);
   }
 }
+.ask {
+  flex: 0 0 auto;
+  border-color: rgb(245 165 36 / 0.5);
+  background: rgb(245 165 36 / 0.08);
+  color: var(--accent);
+  font-weight: 700;
+}
+.ask-meta {
+  margin-left: var(--space-1);
+  font-weight: 400;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
 
-/* 보안 시스템: 빨간 경고창 */
+/* ── 화자 이름·색 (data-speaker = content/characters.js 의 SpeakerKey) ── */
+.who {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--accent);
+}
+.who:empty {
+  display: none;
+}
+[data-speaker='security'] {
+  --speaker: var(--danger);
+}
+[data-speaker='unknown'] {
+  --speaker: var(--unknown);
+}
+[data-speaker='narration'] {
+  --speaker: var(--muted);
+}
+[data-speaker] .who {
+  color: var(--speaker, var(--accent));
+}
+
+/* ── 대사창 (ui/dialogue.js). 프롤로그·단계 시작 이야기 장면에 쓴다 ── */
+.dlg {
+  position: relative;
+  min-height: 7.5em;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--speaker, var(--accent)) 55%, transparent);
+  border-radius: var(--radius);
+  background: rgb(10 13 18 / 0.94);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
+  cursor: pointer;
+  user-select: none;
+}
+.game .dlg {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--space-7) + var(--space-6));
+  z-index: 4;
+  width: min(880px, calc(100% - 32px));
+  transform: translateX(-50%);
+}
+.dlg-who {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--speaker, var(--accent));
+}
+.dlg-who:empty {
+  display: none;
+}
+.dlg-text {
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.dlg-next {
+  position: absolute;
+  right: var(--space-5);
+  bottom: var(--space-3);
+  color: var(--accent);
+  animation: blink 1s steps(1) infinite;
+}
+.dlg.typing .dlg-next {
+  visibility: hidden;
+}
+.dlg-skip {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-3);
+  padding: 2px var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.dlg-skip:hover {
+  color: var(--fg);
+}
+
+/* ── 보안 시스템 경고 ── */
 .taunt {
   padding: var(--space-3) var(--space-4);
-  border: 1px solid rgb(255 107 107 / 0.4);
+  border: 1px solid rgb(255 107 107 / 0.45);
   border-left-width: 3px;
   border-radius: var(--radius);
-  background: rgb(255 107 107 / 0.07);
+  background: rgb(30 12 14 / 0.96);
   color: var(--fg);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.5);
 }
 .taunt .who {
   color: var(--danger);
@@ -795,33 +924,81 @@ input:focus {
   font-weight: 700;
   color: var(--danger);
 }
+/* 단계 화면: 입력창 바로 위에서 떠올랐다 4초 뒤 사라진다.
+   플레이어 시선이 입력창에 있고, 위쪽 브라우저 안내를 가리지 않는다. 레이아웃도 밀지 않는다 */
+.game-toast {
+  position: absolute;
+  bottom: calc(var(--space-7) + var(--space-5));
+  left: 50%;
+  z-index: 6;
+  width: min(520px, calc(100% - 32px));
+  transform: translateX(-50%);
+}
+.game-toast.is-new {
+  animation: toast-in 0.3s ease-out;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+}
+/* 화면 가장자리가 잠깐 붉게 */
+.alert-edge {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 0 rgb(255 60 60 / 0);
+}
+.alert-edge.is-on {
+  animation: edge-flash 0.9s ease-out;
+}
+@keyframes edge-flash {
+  20% {
+    box-shadow: inset 0 0 120px 10px rgb(255 60 60 / 0.35);
+  }
+}
 
-/* 힌트·도구 줄 */
-.stage-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
+/* ── 게임 안 확인 창 (ui/modal.js) ── */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(2px);
 }
-.stage-tools [data-hint-count] {
-  color: var(--warn);
-}
-.hint-cost {
-  font-size: var(--fs-sm);
-  color: var(--muted);
-}
-.stage-tools [data-reset] {
-  margin-left: auto;
-  font-size: var(--fs-sm);
-}
-/* 연 힌트: 브라우저 말풍선으로 보여 준다 */
-.hints {
+.modal-box {
+  width: min(420px, 100%);
   display: flex;
   flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.6);
+  animation: ts-rise 0.25s ease-out both;
+}
+.modal-box h2 {
+  font-size: var(--fs-lg);
+  color: var(--accent);
+}
+.modal-box p {
+  color: var(--muted);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
   gap: var(--space-2);
 }
-.hints:empty {
-  display: none;
+button.primary.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #2a0505;
 }
 
 /* ───────── 9. 클리어·랭킹 (임시, 다음 주에 다듬기) ───────── */
@@ -852,17 +1029,12 @@ tr.mine {
   background: rgb(245 165 36 / 0.12);
 }
 
-/* ───────── 10. 좁은 화면 ───────── */
+/* ───────── 10. 좁은 화면 ─────────
+   6단계는 기기 모드(375px)로 푸는 퍼즐이라, 좁은 화면에서도 사이트 창이 최대한 넓게 보여야 한다 */
 @media (max-width: 600px) {
   #app {
     padding-top: var(--space-5);
     padding-bottom: var(--space-7);
-  }
-  .stage-stats {
-    align-items: flex-start;
-  }
-  .stage-title {
-    font-size: 1.4rem;
   }
   .screen {
     padding: var(--space-5) var(--space-4);
@@ -874,8 +1046,34 @@ tr.mine {
   .screen-bar::before {
     display: none;
   }
+  .game {
+    gap: var(--space-1);
+    padding: var(--space-1);
+  }
+  .hud {
+    gap: var(--space-1) var(--space-3);
+  }
+  .hud-kicker,
+  .steps,
+  .site-nav {
+    display: none;
+  }
   .puzzle {
     padding: var(--space-5) var(--space-4);
+  }
+  /* 긴 안내가 퍼즐 영역을 다 차지하지 않게 높이를 제한하고 안에서 스크롤 */
+  .infobar {
+    padding: var(--space-2) var(--space-3);
+  }
+  .infobar-text {
+    max-height: 5em;
+    overflow: auto;
+  }
+  .ask {
+    flex: 1 1 100%;
+  }
+  .game-toast {
+    bottom: calc(var(--space-7) * 2 + var(--space-3));
   }
   /* 긴 프롬프트는 $ 만 남긴다 */
   .terminal label {
@@ -889,7 +1087,11 @@ tr.mine {
 
 @media (prefers-reduced-motion: reduce) {
   .dlg-next,
-  .terminal.wrong {
+  .terminal.wrong,
+  .infobar.is-new,
+  .game-toast.is-new,
+  .alert-edge.is-on,
+  .modal-box {
     animation: none;
   }
 }
