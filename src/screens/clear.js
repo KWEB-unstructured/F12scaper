@@ -3,7 +3,7 @@ import { loadProgress, resetProgress } from '../core/state.js';
 import { totalHintsUsed } from '../core/game.js';
 import { formatDuration } from '../core/format.js';
 import { STAGES } from '../stages/index.js';
-import { ETHICS_NOTICE } from '../content/story.js';
+import { ETHICS_NOTICE, CLEAR_TITLE } from '../content/story.js';
 
 export function renderClear(root, { go }) {
   const p = loadProgress();
@@ -11,7 +11,7 @@ export function renderClear(root, { go }) {
 
   root.innerHTML = `
     <section class="screen clear-screen">
-      <h1>서버 복구 완료</h1>
+      <h1 data-title></h1>
       <p class="record">최종 기록 <strong>${formatDuration(p.result.finalTime)}</strong></p>
       <p>${p.result.rank ? `${p.result.rank}위` : '순위 집계 중'} · 힌트 ${totalHintsUsed(p)}개</p>
       <ol class="stage-times" data-times></ol>
@@ -23,6 +23,7 @@ export function renderClear(root, { go }) {
     </section>`;
 
   const $ = (sel) => root.querySelector(sel);
+  $('[data-title]').textContent = CLEAR_TITLE; // 결말 미정 — 문구는 story.js 에서 바꾼다
   $('[data-times]').replaceChildren(
     ...STAGES.map((s) =>
       Object.assign(document.createElement('li'), {

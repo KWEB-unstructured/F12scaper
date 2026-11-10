@@ -7,7 +7,11 @@ export default {
   title: '개발자의 흔적',
   tool: 'Elements — HTML 주석',
   toolUsage: '배포된 페이지의 마크업을 직접 보고, 화면에 안 보이는 요소나 남은 주석을 확인한다.',
-  guide: ['선배 조교: 키보드에서 F12를 눌러 봐. 오른쪽에 뜨는 창에서 Elements 탭을 열면 돼.'],
+  // 대사는 화자를 적지 않으면 브라우저가 말한다 (content/characters.js 의 DEFAULT_SPEAKER)
+  guide: [
+    '나는 브라우저야. 콘솔에 남은 메시지 봤어? 누군가 이 페이지에 메모를 숨겨 뒀대.',
+    '개발자 도구에서 Elements 탭을 열어 봐. 화면에 안 보이는 것도 거기엔 다 있어.',
+  ],
   answerHash: 'e21127353e0247cd99fdd3d7581f63578a14265c9df75017062009ed9192d42a', // TODO(정씨): 임시 정답 test1
   hints: [
     '개발자는 화면에 안 보이는 메모를 어디에 남길까? 화면 말고 페이지의 "코드"를 봐야 해.',
@@ -18,7 +22,7 @@ export default {
     // 주석은 .puzzle 의 직속 자식으로, 보이는 문장 바로 아래에 둔다.
     // → 문장을 "검사"하면 Elements 에서 바로 다음 줄에 보인다. 더 깊이 넣지 않는다.
     el.innerHTML = `
-      <p class="puzzle-label">[ 전 관리자 작업 메모 · 1개 ]</p>
+      <p class="puzzle-label">[ 이전 접속자가 남긴 메모 · 1개 ]</p>
       <p class="puzzle-text">개발자는 늘 흔적을 남긴다.</p>
       <!-- 비밀번호: test1 -->
       <p class="puzzle-empty">(화면에 표시할 내용이 없습니다)</p>

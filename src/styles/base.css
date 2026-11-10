@@ -1,5 +1,5 @@
 /* 담당: 정씨 · 공통 레이아웃·디자인
-   콘셉트: "가상의 호랑이대학교 전산실 서버 콘솔". 어두운 터미널 바탕 + 호박색(앰버) 강조.
+   콘셉트: 수상한 웹사이트에 갇힌 화면. 어두운 터미널 바탕 + 호박색(앰버) 강조.
    실제 학교의 로고·색·포털 디자인은 쓰지 않는다.
    퍼즐 대상 요소에는 플레이어가 Styles 패널에서 읽기 쉬운 짧은 클래스만 쓴다. */
 
@@ -18,8 +18,9 @@
   --accent-fg: #1a1205; /* 앰버 위 글자 */
   --ok: #5fd38d; /* 터미널 프롬프트·성공 */
   --ok-line: rgb(95 211 141 / 0.55); /* 정답 입력 테두리 */
-  --danger: #ff6b6b; /* 오류·유령 관리자 */
+  --danger: #ff6b6b; /* 오류·보안 시스템 */
   --warn: #e3b341;
+  --unknown: #7cc4ff; /* 정체를 모르는 화자 */
 
   /* 간격 (4px 단위) */
   --space-1: 4px;
@@ -245,113 +246,257 @@ input:focus {
   color: var(--warn);
 }
 
-/* ───────── 6. 시작 화면 ───────── */
-.start-screen .title {
-  font-size: var(--fs-xl);
-  color: var(--accent);
-  letter-spacing: -0.02em;
+/* ───────── 6. 시작 화면 (타이틀) ─────────
+   흐린 도서관 배경 위에 제목·문구가 차례로 떠오른다. 배경(.ts-backdrop)은 로그인 화면도 같이 쓴다. */
+.title-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: auto;
+  padding: var(--space-4) clamp(var(--space-4), 5vw, var(--space-7));
+  color: var(--fg);
 }
-.start-screen .title .key {
-  display: inline-block;
-  padding: 0 0.25em;
-  margin-right: 0.15em;
-  border: 2px solid currentColor;
-  border-radius: var(--radius);
-  font-size: 0.8em;
+
+/* 배경: 도서관 이미지를 흐리고 어둡게 + 가장자리 비네트 + 주사선 + 가끔 형광등처럼 깜빡임 */
+.ts-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #050608;
 }
-.start-screen .tagline {
-  font-size: var(--fs-lg);
+/* 배경보다 위에 그려지도록 내용은 position 을 준다 (배경을 z-index: -1 로 두면 body 바탕색에 가려진다) */
+.title-screen > :not(.ts-backdrop),
+.intro-screen {
+  position: relative;
 }
-/* 서버 경보 로그: 한 줄씩 찍히듯 나타난다 */
-.syslog {
-  align-self: stretch;
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  list-style: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-  font-size: var(--fs-sm);
-  white-space: pre-wrap;
+.ts-bg {
+  position: absolute;
+  inset: -24px;
+  background: url('/prologue/library-bg.png') center / cover no-repeat;
+  filter: blur(6px) brightness(0.32) saturate(0.75);
+  animation:
+    ts-drift 40s ease-in-out infinite alternate,
+    ts-flicker 9s steps(1) infinite;
 }
-.syslog li {
-  animation: log-in 0.25s ease-out both;
+.ts-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.025) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 45%, transparent 25%, rgb(0 0 0 / 0.88) 100%);
 }
-.syslog li:nth-child(2) {
-  animation-delay: 0.35s;
-}
-.syslog li:nth-child(3) {
-  animation-delay: 0.7s;
-}
-@keyframes log-in {
-  from {
-    opacity: 0;
-    transform: translateX(-4px);
+@keyframes ts-drift {
+  to {
+    transform: scale(1.08) translate(-1.5%, -1%);
   }
 }
-.lv-alert {
+@keyframes ts-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  91% {
+    opacity: 0.55;
+  }
+  92% {
+    opacity: 1;
+  }
+  93.5% {
+    opacity: 0.7;
+  }
+  94% {
+    opacity: 1;
+  }
+}
+
+/* 위쪽 구석 상태 표시 */
+.ts-corner {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.ts-status::before {
+  content: '● ';
   color: var(--danger);
-  font-weight: 700;
+  animation: blink 1.4s steps(1) infinite;
 }
-.lv-info {
-  color: var(--ok);
+
+/* 가운데 내용 */
+.ts-main {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-6) 0;
+  text-align: center;
 }
-/* 플레이어가 할 일 */
-.mission {
+/* 차례로 떠오르기 (--i 는 start.js 가 순서대로 넣는다) */
+.ts-in {
+  animation: ts-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 0.22s + 0.15s);
+}
+@keyframes ts-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(4px);
+  }
+}
+.ts-kicker {
+  font-size: var(--fs-sm);
+  color: var(--unknown);
+  letter-spacing: 0.12em;
+}
+.ts-title {
+  position: relative;
+  font-size: clamp(2.6rem, 9vw, 5.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: #f4f6f8;
+  text-shadow: 0 0 40px rgb(245 165 36 / 0.25);
+}
+.ts-f12 {
+  color: var(--accent);
+}
+/* 제목이 아주 가끔(10초에 한 번, 0.2초 남짓) 살짝 어긋난다: 같은 글자를 옅은 빨강·하늘색으로 겹쳐 잘라 낸다 */
+.ts-title::before,
+.ts-title::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.ts-title::before {
+  color: #ff2e63;
+  animation: ts-glitch-a 10s steps(1) 3s infinite;
+}
+.ts-title::after {
+  color: #3ee6ff;
+  animation: ts-glitch-b 10s steps(1) 3s infinite;
+}
+@keyframes ts-glitch-a {
+  0%,
+  95%,
+  100% {
+    opacity: 0;
+  }
+  96% {
+    opacity: 0.4;
+    transform: translate(-2px, 0);
+    clip-path: inset(20% 0 55% 0);
+  }
+  97% {
+    opacity: 0;
+  }
+}
+@keyframes ts-glitch-b {
+  0%,
+  95.5%,
+  100% {
+    opacity: 0;
+  }
+  96.5% {
+    opacity: 0.35;
+    transform: translate(2px, 0);
+    clip-path: inset(55% 0 20% 0);
+  }
+  97.5% {
+    opacity: 0;
+  }
+}
+.ts-tagline {
+  font-size: var(--fs-lg);
+  color: var(--accent);
+}
+.ts-mission {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  color: #c9d3dd;
+  font-size: 1.05rem;
 }
-.mission .meta {
-  margin-top: var(--space-2);
-  color: var(--accent);
-  font-size: var(--fs-sm);
+.ts-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
 }
-.start-screen .browser-note::before {
-  content: '[i] ';
-  color: var(--ok);
+.ts-start {
+  padding: var(--space-3) var(--space-6);
+  font-size: 1.1rem;
+  box-shadow: 0 0 0 0 rgb(245 165 36 / 0.5);
+  animation: ts-pulse 2.4s ease-out 2.2s infinite;
+}
+@keyframes ts-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(245 165 36 / 0.45);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 14px rgb(245 165 36 / 0);
+  }
+}
+.ts-ghost {
+  padding: var(--space-3) var(--space-5);
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.04);
 }
 
-/* ───────── 7. 인트로 화면 ───────── */
-.story {
-  align-self: stretch;
+/* 아래: 윤리 안내 · 브라우저 권장 (기획서 필수 요소) */
+.ts-foot {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  min-height: 5em;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 760px;
+  margin: 0 auto;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: rgb(201 211 221 / 0.6);
+  text-align: center;
 }
-.story-line::before {
-  content: '> ';
-  color: var(--ok);
+
+@media (prefers-reduced-motion: reduce) {
+  .ts-bg,
+  .ts-in,
+  .ts-title::before,
+  .ts-title::after,
+  .ts-start,
+  .ts-status::before {
+    animation: none;
+  }
 }
-/* 한 줄씩 타자 치듯 나올 때 깜빡이는 커서 */
-.story-line.typing::after {
-  content: '▌';
-  color: var(--accent);
-  animation: blink 1s steps(1) infinite;
-}
+
+/* ───────── 7. 로그인(닉네임) 화면 ───────── */
 @keyframes blink {
   50% {
     opacity: 0;
   }
 }
-
-.intro-next {
-  align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
+/* 흐린 도서관 배경(.ts-backdrop) 위에 뜨는 로그인 창 */
+.intro-screen {
+  max-width: 560px;
+  margin: 12vh auto 0;
+  background: rgb(16 21 28 / 0.82);
+  backdrop-filter: blur(6px);
+  animation: ts-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-.f12-guide {
-  padding: var(--space-3) var(--space-4);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-  background: var(--panel-2);
-}
-.f12-guide strong {
-  color: var(--accent);
+.intro-screen h1 {
+  font-size: var(--fs-lg);
 }
 .nick-form {
+  align-self: stretch;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -469,6 +614,79 @@ input:focus {
   font-weight: 700;
   color: var(--accent);
 }
+.who:empty {
+  display: none;
+}
+/* 화자별 색 (data-speaker = content/characters.js 의 SpeakerKey) */
+[data-speaker='security'] {
+  --speaker: var(--danger);
+}
+[data-speaker='unknown'] {
+  --speaker: var(--unknown);
+}
+[data-speaker='narration'] {
+  --speaker: var(--muted);
+}
+.say[data-speaker] {
+  border-color: color-mix(in srgb, var(--speaker, var(--accent)) 40%, transparent);
+  background: color-mix(in srgb, var(--speaker, var(--accent)) 7%, transparent);
+}
+[data-speaker] .who {
+  color: var(--speaker, var(--accent));
+}
+
+/* 대사창 (ui/dialogue.js). 프롤로그와 이후 연출에서 같이 쓴다 */
+.dlg {
+  position: relative;
+  min-height: 7.5em;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--speaker, var(--accent)) 55%, transparent);
+  border-radius: var(--radius);
+  background: rgb(10 13 18 / 0.92);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
+  cursor: pointer;
+  user-select: none;
+}
+.dlg-who {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--speaker, var(--accent));
+}
+.dlg-who:empty {
+  display: none;
+}
+.dlg-text {
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+[data-speaker='narration'] .dlg-text {
+  color: var(--fg);
+}
+.dlg-next {
+  position: absolute;
+  right: var(--space-5);
+  bottom: var(--space-3);
+  color: var(--accent);
+  animation: blink 1s steps(1) infinite;
+}
+.dlg.typing .dlg-next {
+  visibility: hidden;
+}
+.dlg-skip {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-3);
+  padding: 2px var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.dlg-skip:hover {
+  color: var(--fg);
+}
 
 /* 조사 대상: 점선 테두리 + 제목 줄로 UI 와 구분한다 */
 .puzzle-frame {
@@ -561,7 +779,7 @@ input:focus {
   }
 }
 
-/* 유령 관리자: 빨간 경고창 */
+/* 보안 시스템: 빨간 경고창 */
 .taunt {
   padding: var(--space-3) var(--space-4);
   border: 1px solid rgb(255 107 107 / 0.4);
@@ -571,6 +789,10 @@ input:focus {
   color: var(--fg);
 }
 .taunt .who {
+  color: var(--danger);
+}
+.taunt .alert-title {
+  font-weight: 700;
   color: var(--danger);
 }
 
@@ -592,19 +814,14 @@ input:focus {
   margin-left: auto;
   font-size: var(--fs-sm);
 }
+/* 연 힌트: 브라우저 말풍선으로 보여 준다 */
 .hints {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  margin: 0;
-  padding-left: var(--space-5);
-  color: var(--warn);
 }
 .hints:empty {
   display: none;
-}
-.hints li {
-  padding-left: var(--space-1);
 }
 
 /* ───────── 9. 클리어·랭킹 (임시, 다음 주에 다듬기) ───────── */
@@ -671,8 +888,7 @@ tr.mine {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .story-line.typing::after,
-  .syslog li,
+  .dlg-next,
   .terminal.wrong {
     animation: none;
   }
