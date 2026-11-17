@@ -4,6 +4,7 @@ import '../src/styles/stages.css';
 import { EVENTS, on, startLocalGame, getState, mountStage, submitAnswer, requestHint, reset } from '../src/core/engine.js';
 import { loadProgress, saveProgress } from '../src/core/state.js';
 import { STAGES } from '../src/stages/index.js';
+import { SPEAKERS, PROGRESS_LABEL } from '../src/content/characters.js';
 
 const $ = (id) => document.getElementById(id);
 let cleanup = null;
@@ -15,8 +16,11 @@ const log = (name, detail) => {
 EVENTS.forEach((name) => on(name, (d) => log(name, d)));
 
 // 대사는 textContent 로 (CLAUDE.md 규칙 9)
-on('say', ({ text }) => $('guide').append(Object.assign(document.createElement('p'), { textContent: text })));
-on('taunt', ({ text }) => ($('taunt').textContent = `유령 관리자: ${text}`));
+on('say', ({ speaker, text }) => {
+  const name = SPEAKERS[speaker]?.name;
+  $('guide').append(Object.assign(document.createElement('p'), { textContent: name ? `${name}: ${text}` : text }));
+});
+on('taunt', ({ text }) => ($('taunt').textContent = `${SPEAKERS.security.name}: ${text}`));
 on('hint', ({ text }) => {
   $('hints').append(Object.assign(document.createElement('li'), { textContent: text }));
   renderStatus();
@@ -29,7 +33,7 @@ function renderStatus() {
   $('status').textContent = s
     ? s.finished
       ? '모든 단계 완료'
-      : `STAGE ${s.stage}/${s.totalStages} ${s.title} · 복구율 ${s.recovery}% · 힌트 ${s.hintsUsed}/${s.hintsTotal} · 이번 단계 오답 ${s.wrong}`
+      : `STAGE ${s.stage}/${s.totalStages} ${s.title} · ${PROGRESS_LABEL} ${s.recovery}% · 힌트 ${s.hintsUsed}/${s.hintsTotal} · 이번 단계 오답 ${s.wrong}`
     : '진행 없음. "새 게임"을 누르세요.';
 }
 

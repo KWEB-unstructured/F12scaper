@@ -29,7 +29,7 @@ import { EVENTS, on, startGame, startLocalGame, getState, mountStage,
 ```js
 { finished: false, stage: 4, totalStages: 8, title: '권한이 없습니다',
   inputEnabled: true,            // false 면 입력창 숨김 (3단계)
-  recovery: 38,                  // 서버 복구율 %
+  recovery: 38,                  // 탈출 진행률 % (화면 라벨은 content/characters.js 의 PROGRESS_LABEL)
   hintsUsed: 1, hintsTotal: 3, nextHintCostMin: 5,   // 다 열었으면 null
   openedHints: ['...'],          // 이미 연 힌트 문구 (새로고침 후 복원용)
   wrong: 2, totalHints: 4, penaltyMs: 480000, startedAt: '2026-11-17T...Z',
@@ -40,17 +40,18 @@ import { EVENTS, on, startGame, startLocalGame, getState, mountStage,
 
 | 이름 | 언제 | detail |
 |---|---|---|
-| `stage-enter` | `mountStage` 때 | `{ stage: 4, title, guide: ['선배 조교: ...'], inputEnabled }` |
-| `say` | 선배 조교 대사 한 줄. 시작 대사·퍼즐이 거는 대사·힌트 권유 | `{ text: '선배 조교: ...', reason?: 'guide' \| 'hint-suggest' }` |
-| `taunt` | 유령 관리자 메시지 | `{ text, reason: 'wrong' \| 'puzzle' \| 'network' }` |
+| `stage-enter` | `mountStage` 때 | `{ stage: 4, title, guide: ['대사', { speaker: 'unknown', text: '...' }], inputEnabled }` |
+| `say` | 대사 한 줄. 시작 대사·퍼즐이 거는 대사·힌트 권유. 화자는 `speaker` 로 구분 | `{ speaker: 'browser', text: '...', reason?: 'guide' \| 'hint-suggest' }` |
+| `taunt` | 보안 시스템 경고 본문 (제목 "비인가 접근 감지 (n회)" 는 화면이 붙인다) | `{ text, reason: 'wrong' \| 'puzzle' \| 'network' }` |
 | `wrong` | 오답. 오답 수는 이미 저장됨 | `{ stage: 4, count: 3 }` |
 | `hint-suggest` | 같은 단계 오답 **5회째**이고 힌트를 하나도 안 열었을 때 (한 번만) | `{ stage: 4, count: 5 }` — 대사 문구는 `say` 로도 같이 나간다 |
 | `hint` | `requestHint` 로 힌트가 열림 | `{ stage, index: 0, text, penaltyMin: 3, used: 1 }` |
 | `stage-clear` | 단계 통과 (저장 끝난 뒤) | `{ stage: 4, fragment: 'xxxx', stageTime: 53000, nextStage: 5 }` |
-| `recovery` | `stage-clear` 직후 복구율 변경 | `{ percent: 50 }` |
+| `recovery` | `stage-clear` 직후 탈출 진행률 변경 | `{ percent: 50 }` |
 | `finish` | 8단계까지 통과 | `{ result: { finalTime, rank } }` |
 
-대사·도발 문구는 `<` 가 들어갈 수 있으니 **`textContent` 로만** 넣는다 (CLAUDE.md 규칙 9).
+화자 이름은 문자열에 적지 않는다. `speaker` 키(`narration`·`browser`·`security`·`unknown`)만 쓰고, 이름은 [characters.js](../src/content/characters.js) 에서 찾는다 ([contracts.md](contracts.md) 참고).
+대사·경고 문구는 `<` 가 들어갈 수 있으니 **`textContent` 로만** 넣는다 (CLAUDE.md 규칙 9).
 
 ## 호출 순서
 

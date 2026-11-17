@@ -20,11 +20,7 @@ export default {
   title: '남겨진 함수',
   tool: 'Console',
   toolUsage: '페이지의 변수와 함수를 직접 호출해 보며 동작을 확인하고 에러 로그를 읽는다.',
-  guide: [
-    '브라우저: 문이 잠겨 있어요. 이번엔 Console 탭을 열어 보세요.',
-    '브라우저: 누군가 쓰던 함수가 아직 남아 있는 것 같아요.',
-  ],
-  answerHash: '1ade1fd4843f0c181624362b7aa686aeb5d7e86b492b89613d6888843f551220',
+
   input: false,
   hints: [
     '이 페이지의 "이름"은 어디에 적혀 있을까요? 브라우저 맨 위를 봐요.',
@@ -32,15 +28,7 @@ export default {
     '탭 제목 끝의 latrop 을 오른쪽 글자부터 거꾸로 읽어 보세요. 그 단어로 Console 에 unlock("단어") 를 입력하고 Enter 를 누르면 돼요.',
   ],
   mount(el, ctx) {
-    document.title = PUZZLE_TITLE;
-    el.innerHTML = `
-      <p class="puzzle-text">나가는 문이 잠겨 있다.</p>
-      <p class="puzzle-text">문 위에 작은 글씨: <q>열쇠는 거울 속에 있다.</q></p>
-    `;
 
-    console.log('%c[보안시스템] 출입 잠금 상태입니다.', LOG_SYSTEM);
-    console.log('%c[보안시스템] 관리용 함수 unlock(key) 가 아직 제거되지 않았습니다.', LOG_SYSTEM);
-    console.log('%c[보안시스템] key 는 이 페이지의 이름에 보관되어 있습니다.', LOG_SYSTEM);
 
     window.unlock = async (key) => {
       if (key === undefined) {
@@ -55,7 +43,7 @@ export default {
       } else if (String(key).trim().toLowerCase() === REVERSED_KEY) {
         console.warn('[보안시스템] 열쇠가 뒤집혀 있습니다.');
       } else {
-        console.warn('[보안시스템] 등록되지 않은 열쇠입니다. 비정상 접근으로 기록됩니다.');
+
       }
     };
 

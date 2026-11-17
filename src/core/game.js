@@ -16,7 +16,7 @@ export function currentStage(p) {
   return STAGES[p.stage - 1] ?? null;
 }
 
-/** 서버 복구율 (0~100). 푼 단계 수 기준. */
+/** 진행률 (0~100). 푼 단계 수 기준. 화면 라벨은 content/characters.js 의 PROGRESS_LABEL */
 export function recoveryPercent(p) {
   return Math.round(((p.stage - 1) / TOTAL_STAGES) * 100);
 }

@@ -22,8 +22,8 @@ export default {
   tool: 'Application — 쿠키',
   toolUsage: '로그인·세션 문제를 디버깅할 때 쿠키와 저장소 값을 확인하고 지운다.',
   guide: [
-    '선배 조교: 여기서부터는 어느 탭을 열어야 하는지 내가 알려주지 않을 거야.',
-    '선배 조교: 이 페이지, 우리가 누군지 알고 문전박대하네. 그런데 서버는 우리가 누군지 어떻게 기억하고 있을까?',
+    '여기서부터는 어느 탭을 열어야 하는지 내가 알려주지 않을 거야.',
+    'THE ARCHIVE 가 우리를 알아보고 문전박대하네. 그런데 사이트는 우리가 누군지 어떻게 기억하고 있을까?',
   ],
   answerHash: '9e5da9f5a25c648ab528f6bdc871ff39fae642b24d1a39f0366021e93692f9aa', // 임시 정답 test4
   hints: [
@@ -32,9 +32,9 @@ export default {
     'role 이라는 쿠키의 Value 를 student 에서 admin 으로 고치고(더블클릭), 페이지를 새로고침(F5)하세요. 나타난 글자를 입력창에 넣으면 돼요.',
   ],
   taunts: [
-    '관리자 권한도 없이 여기까지 왔다고? 신입 조교 주제에.',
-    '아직도 학생증만 들고 있네. 신분이 바뀌지 않으면 문은 안 열려.',
-    '그 입력창에 뭘 적어도 소용없어. 먼저 네가 누군지부터 증명해.',
+    '관리자 권한이 확인되지 않았습니다. 이 접근은 기록됩니다.',
+    '이용자 등급이 변경되지 않았습니다. 일반 이용자에게 이 문은 열리지 않습니다.',
+    '입력값 거부: 먼저 이용자 신원을 증명하십시오.',
   ],
   mount(el, ctx) {
     // 쿠키가 없을 때만 학생으로 시작한다. 이미 있으면(admin 포함) 건드리지 않는다.
@@ -45,8 +45,8 @@ export default {
     if (readRole() === 'admin') {
       el.innerHTML = `<p class="puzzle-text">관리자 인증 완료.</p><p class="puzzle-text">접근 코드: <code data-code></code></p>`;
       el.querySelector('[data-code]').textContent = revealFragment();
-      ctx.say('선배 조교: 오, 관리자가 됐네! 화면에 나온 코드를 입력해 봐.');
-      ctx.taunt('...누가 쿠키를 건드렸지? 규정 위반이야.');
+      ctx.say('오, 관리자 등급이 됐네! 화면에 나온 코드를 입력해 봐.');
+      ctx.taunt('이용자 등급 변조가 감지되었습니다. 이 사실은 기록됩니다.');
     } else {
       el.innerHTML = `<p class="puzzle-text">권한이 없습니다.</p>`;
     }

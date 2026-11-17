@@ -16,13 +16,17 @@ import {
 } from './game.js';
 import { loadProgress, saveProgress, createProgress, resetProgress, getVerifyPayload } from './state.js';
 import { startSession, verifyFinal } from './api.js';
-import { DEFAULT_TAUNTS, HINT_SUGGEST } from '../content/story.js';
+import { DEFAULT_TAUNTS, HINT_SUGGEST, SERVER_DOWN } from '../content/story.js';
+import { DEFAULT_SPEAKER } from '../content/characters.js';
+
+/** 대사 한 줄 → { speaker, text }. 문자열이면 기본 화자(브라우저), 객체면 speaker 가 없을 때만 기본 화자 */
+const toLine = (line) => (typeof line === 'string' ? { speaker: DEFAULT_SPEAKER, text: line } : { speaker: DEFAULT_SPEAKER, ...line });
 
 /** 구독할 수 있는 이벤트 이름 */
 export const EVENTS = ['stage-enter', 'say', 'taunt', 'wrong', 'hint-suggest', 'hint', 'stage-clear', 'recovery', 'finish'];
 
-// 5회 오답 → 선배 조교가 힌트를 권하는 대사도 같이 내보낸다.
-bus.addEventListener('hint-suggest', () => emit('say', { text: HINT_SUGGEST, reason: 'hint-suggest' }));
+// 5회 오답 → 브라우저가 힌트를 권하는 대사도 같이 내보낸다.
+bus.addEventListener('hint-suggest', () => emit('say', { ...toLine(HINT_SUGGEST), reason: 'hint-suggest' }));
 
 /**
  * 이벤트 구독. 해제 함수를 돌려준다.
@@ -87,12 +91,12 @@ export function mountStage(el) {
   const ctx = {
     complete: (fragment) => clearStage(fragment),
     verify: (input) => checkAnswer(stage, input),
-    say: (text) => emit('say', { text }),
+    say: (line) => emit('say', toLine(line)),
     taunt: (text) => emit('taunt', { text, reason: 'puzzle' }),
     fragments: Object.freeze({ ...p.fragments }),
   };
   emit('stage-enter', { stage: stage.id, title: stage.title, guide: [...stage.guide], inputEnabled: stage.input !== false });
-  stage.guide.forEach((text) => emit('say', { text, reason: 'guide' }));
+  stage.guide.forEach((line) => emit('say', { ...toLine(line), reason: 'guide' }));
   const cleanup = stage.mount(el, ctx);
   return typeof cleanup === 'function' ? cleanup : () => {};
 }
@@ -137,7 +141,7 @@ export async function submitAnswer(input) {
         saveProgress(p); // clearStage 가 저장분을 다시 읽으므로 먼저 저장
       }
     } catch (err) {
-      emit('taunt', { text: '서버가 응답하지 않는다... 잠시 후 다시 입력해 봐.', reason: 'network' });
+      emit('taunt', { text: SERVER_DOWN, reason: 'network' });
       return { ok: false, error: err.message };
     }
   } else {

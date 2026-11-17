@@ -13,8 +13,8 @@ export default {
   tool: 'Sources — 중단점',
   toolUsage: '코드 실행을 멈추고 그 순간의 변수 값을 확인하며 버그를 추적한다.',
   guide: [
-    '선배 조교: 마지막 관문 앞이야. 이 서버의 암호 조각이 화면에 잠깐 나타났다 사라지는 것 같아.',
-    '선배 조교: 눈으로 잡기엔 너무 빨라. 그 순간을 멈출 방법이 있을 텐데...',
+    '출구가 멀지 않았어. THE ARCHIVE 의 암호 조각이 화면에 잠깐 나타났다 사라지는 것 같아.',
+    '눈으로 잡기엔 너무 빨라. 그 순간을 멈출 방법이 있을 텐데...',
   ],
   answerHash: '350a75e9fcb0481ffdbb5d30517265700a8f9fa6b9bab5a0fdf9ad849a2377ce', // 임시 정답 test7
   hints: [
@@ -23,13 +23,13 @@ export default {
     'stage7-flash.js 47번째 줄 showFlash(flashValue); 의 줄 번호를 눌러 중단점을 걸어요. 3초 안에 코드가 멈추면 오른쪽 Scope 의 Local 에서 flashValue 값을 읽고, ▶ 로 재개하세요.',
   ],
   taunts: [
-    '봤어? 못 봤지? 0.1초면 충분해.',
-    '눈이 빠른 게 아니라 코드를 멈춰야 한다는 걸 아직 모르는 거야?',
-    '여기까지 온 건 칭찬해 주지. 하지만 그 답은 아니야.',
+    '신호 송출 완료. 육안으로는 확인되지 않았습니다.',
+    '송출은 0.1초 만에 종료됩니다. 눈으로는 읽을 수 없습니다.',
+    '입력값이 일치하지 않습니다. 이 접근은 기록됩니다.',
   ],
   mount(el, ctx) {
     el.innerHTML = `
-      <p class="puzzle-text">서버 중앙 장치가 암호 조각을 주기적으로 송출하고 있다.</p>
+      <p class="puzzle-text">THE ARCHIVE 의 중앙 장치가 암호 조각을 주기적으로 송출하고 있다.</p>
       <div data-flash style="display:inline-block; min-width:16em; padding:1em 1.5em; background:#1c1f26; color:#9fd8b0; font:1.4em monospace; text-align:center; opacity:0.45;">신호 연결 중...</div>
     `;
     const box = el.querySelector('[data-flash]');
@@ -41,7 +41,7 @@ export default {
     script.onload = () => {
       if (!disposed) window.stage7Flash.start(box);
     };
-    script.onerror = () => ctx.taunt('신호 송출기가 응답하지 않는다... 페이지를 새로고침해 봐.');
+    script.onerror = () => ctx.say('신호 송출기가 응답하지 않아... 페이지를 새로고침해 봐.');
     document.head.append(script);
 
     return () => {
