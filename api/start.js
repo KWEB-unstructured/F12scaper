@@ -2,19 +2,29 @@
 // 요청: { nickname }  응답 201: { sessionId, startedAt }  400: { error: 'invalid_nickname' }
 import { randomUUID } from 'node:crypto';
 import { allowMethod, badRequest } from './_lib/http.js';
-import { hasDb } from './_lib/supabase.js';
+import { hasDb, db } from './_lib/supabase.js';
+import { hasProfanity, hasInvisibleChar } from './_lib/profanity.js';
 
 export default async function handler(req, res) {
   if (!allowMethod(req, res, 'POST')) return;
 
   const nickname = String(req.body?.nickname ?? '').trim();
-  if (nickname.length < 1 || nickname.length > 16) return badRequest(res, 'invalid_nickname');
-  // TODO(김씨): 비속어 닉네임 필터 → badRequest(res, 'invalid_nickname')
+  if (nickname.length < 1 || nickname.length > 16 || hasProfanity(nickname) || hasInvisibleChar(nickname)) return badRequest(res, 'invalid_nickname');
 
   if (!hasDb()) {
     return res.status(201).json({ sessionId: randomUUID(), startedAt: new Date().toISOString(), mock: true });
   }
 
-  // TODO(김씨): sessions 에 insert (started_at 은 DB 기본값 now()) 후 id, started_at 반환
-  return res.status(501).json({ error: 'not_implemented' });
+  const { data, error } = await db()
+    .from('sessions')
+    .insert({nickname})
+    .select('id, started_at')
+    .single();
+
+  if (error) {
+    console.error(`[api/start]`, error);
+    return res.status(500).json({ error: 'db_error'});
+  }
+
+  return res.status(201).json({ sessionId: data.id, startedAt: data.started_at });
 }
