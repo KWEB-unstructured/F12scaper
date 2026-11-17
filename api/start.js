@@ -3,7 +3,7 @@
 import { randomUUID } from 'node:crypto';
 import { allowMethod, badRequest } from './_lib/http.js';
 import { hasDb, db } from './_lib/supabase.js';
-import { hasProfanity, hasInvisibleChar } from './_lib/profanity.js'
+import { hasProfanity, hasInvisibleChar } from './_lib/profanity.js';
 
 export default async function handler(req, res) {
   if (!allowMethod(req, res, 'POST')) return;
