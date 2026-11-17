@@ -9,8 +9,8 @@ export default async function handler(req, res) {
   if (!hasDb()) {
     return res.status(200).json({
       rankings: [
-        { rank: 1, nickname: '호랑이1', finalTime: 1_820_000, hintsUsed: 0 },
-        { rank: 2, nickname: '호랑이2', finalTime: 2_450_000, hintsUsed: 3 },
+        { rank: 1, nickname: '접속자1', finalTime: 1_820_000, hintsUsed: 0 },
+        { rank: 2, nickname: '접속자2', finalTime: 2_450_000, hintsUsed: 3 },
       ],
       mock: true,
     });

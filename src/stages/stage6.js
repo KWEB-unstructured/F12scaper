@@ -7,7 +7,7 @@ export default {
   title: '작은 화면으로만 보인다',
   tool: '기기 모드 (반응형)',
   toolUsage: '모바일 화면 크기를 흉내 내서 반응형 레이아웃이 깨지지 않는지 확인한다.',
-  guide: ['선배 조교: TODO 대사'],
+  guide: ['TODO 대사'],
   answerHash: 'fdb6d4437c15f56d72413ed17252732ba12960672f975547a91977557d086446', // 임시 정답 test6
   hints: ['TODO 힌트 1', 'TODO 힌트 2', 'TODO 힌트 3'],
   mount(el) {

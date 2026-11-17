@@ -1,0 +1,489 @@
+/* 담당: 정씨 · 프롤로그 (screens/prologue.js)
+   장면: [data-scene] = library | monitor | archive | glitch | trapped
+   상태 클래스: .is-zoomed (모니터로 줌인) · .is-full (모니터가 화면 전체) · .no-anim (이어 하기 때 즉시 적용) */
+
+.prologue {
+  /* 배경 이미지 (public/prologue/library-bg.png, 1672 × 941) 의 가로세로 비율.
+     도서관 전체(.pl-world)를 이 비율로 만들어 화면을 덮으므로, 창 크기가 달라도 아래 좌표가 이미지와 어긋나지 않는다. */
+  --img-ratio: calc(1672 / 941);
+  --world-w: max(100vw, calc(100vh * var(--img-ratio)));
+  --world-h: max(100vh, calc(100vw / var(--img-ratio)));
+
+  /* 모니터 화면(검은 패널) 영역 — 이미지 대비 단위 없는 % 값.
+     원본 픽셀 x 489~1237, y 180~553 (받침 제외). 이미지를 바꾸면 이 네 값과 --img-ratio 만 고치면 된다. */
+  --monitor-x: 29.25;
+  --monitor-y: 19.13;
+  --monitor-w: 44.74;
+  --monitor-h: 39.64;
+  /* 이미지에 실제 베젤이 있으므로 CSS 베젤은 그리지 않는다 (이미지 없이 테스트할 때만 8px 정도로) */
+  --bezel: 0px;
+  /* 줌인 배율: 모니터가 화면 너비 80% 또는 높이 70% 를 채울 때까지 */
+  --zoom: min(calc(80 / var(--monitor-w)), calc(70 / var(--monitor-h)));
+  --zoom-ms: 1400ms;
+
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden;
+  background: #000;
+  font-family: var(--font-mono);
+}
+.prologue.no-anim,
+.prologue.no-anim * {
+  transition: none !important;
+}
+
+/* ── 도서관 (줌 대상) ──
+   이미지 비율 그대로 화면을 덮도록 크기를 잡고 가운데에 둔다 (background-size: cover 와 같은 효과) */
+.pl-world {
+  position: absolute;
+  left: calc((100% - var(--world-w)) / 2);
+  top: calc((100% - var(--world-h)) / 2);
+  width: var(--world-w);
+  height: var(--world-h);
+  transform-origin: calc((var(--monitor-x) + var(--monitor-w) / 2) * 1%) calc((var(--monitor-y) + var(--monitor-h) / 2) * 1%);
+  transition: transform var(--zoom-ms) cubic-bezier(0.6, 0, 0.3, 1);
+}
+/* 모니터 중심을 화면 중앙으로 옮긴 뒤 확대한다 */
+.is-zoomed .pl-world {
+  transform: translate(
+      calc((50 - var(--monitor-x) - var(--monitor-w) / 2) * 1%),
+      calc((45 - var(--monitor-y) - var(--monitor-h) / 2) * 1%)
+    )
+    scale(var(--zoom));
+}
+/* 갇힘: 도서관 틀을 화면 크기로 되돌려서 모니터(100%)가 정확히 화면 전체가 되게 한다 */
+.is-full .pl-world {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  /* 크기 전환 애니메이션은 이 연출 때만. 평소에 걸면 창 크기를 바꿀 때마다 도서관이 천천히 늘어난다 */
+  transition:
+    transform var(--zoom-ms) cubic-bezier(0.6, 0, 0.3, 1),
+    left var(--zoom-ms),
+    top var(--zoom-ms),
+    width var(--zoom-ms),
+    height var(--zoom-ms);
+}
+
+/* 배경: .pl-world 가 이미지 비율이므로 100% 100% 로 늘려도 찌그러지지 않는다.
+   이미지가 없으면 아래 그라디언트(책장·책상)가 대신 보인다 */
+.pl-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    url('/prologue/library-bg.png') 0 0 / 100% 100% no-repeat,
+    linear-gradient(180deg, transparent 72%, #2a1d14 72%, #1c140e 100%),
+    repeating-linear-gradient(90deg, #3a2a1e 0 6px, #5b3f2a 6px 34px, #2e2118 34px 40px, #6b4a30 40px 70px),
+    #2a1f17;
+  filter: brightness(0.85);
+  transition: opacity var(--zoom-ms);
+}
+.is-full .pl-bg {
+  opacity: 0;
+}
+
+/* 모니터 베젤 */
+.pl-monitor {
+  position: absolute;
+  left: calc(var(--monitor-x) * 1%);
+  top: calc(var(--monitor-y) * 1%);
+  width: calc(var(--monitor-w) * 1%);
+  height: calc(var(--monitor-h) * 1%);
+  border: var(--bezel) solid #141518;
+  border-radius: 2px;
+  background: #050608;
+  /* 켜진 화면이 주변을 살짝 비추는 빛 */
+  box-shadow: 0 0 50px rgb(120 170 255 / 0.22);
+  transition:
+    left var(--zoom-ms),
+    top var(--zoom-ms),
+    width var(--zoom-ms),
+    height var(--zoom-ms),
+    border-width var(--zoom-ms),
+    border-radius var(--zoom-ms);
+}
+.is-full .pl-monitor {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-width: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.pl-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #eef1f4;
+  color: #1d2329;
+  font-size: 9px; /* 줌 전 기준 크기. 줌인하면 2배 이상 커진다 */
+  line-height: 1.5;
+}
+.is-full .pl-screen {
+  font-size: 16px;
+}
+
+/* 줌 전: 바탕화면에 과제 파일 하나 */
+.pl-desktop {
+  height: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #24476b, #142a40);
+}
+.pl-file {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: #fff;
+}
+.pl-file-icon {
+  width: 18px;
+  height: 22px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: inset 0 -6px 0 #2b6cb0;
+}
+
+/* ── 가짜 브라우저 ── */
+.pl-browser {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.pl-chrome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: #d9dee4;
+  border-bottom: 1px solid #c3c9d0;
+}
+.pl-dots {
+  color: #a8b0b9;
+  letter-spacing: 1px;
+}
+.pl-url {
+  flex: 1;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #fff;
+  color: #4a5562;
+}
+.pl-view {
+  flex: 1;
+  overflow: auto;
+}
+.pl-page {
+  min-height: 100%;
+  padding: 12px 16px;
+}
+.pl-note {
+  margin-top: 6px;
+  color: #a33;
+}
+
+/* 검색 페이지 */
+.pl-search {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 24px;
+}
+.pl-brand {
+  font-size: 2.2em;
+  font-weight: 700;
+  color: #2b6cb0;
+}
+.pl-searchbar {
+  display: flex;
+  width: 80%;
+  gap: 4px;
+}
+.pl-searchbar input {
+  flex: 1;
+  padding: 3px 8px;
+  border: 1px solid #b8c0c9;
+  border-radius: 12px;
+  background: #fff;
+  color: #1d2329;
+  font: inherit;
+}
+.pl-searchbar button,
+.pl-site button {
+  padding: 2px 10px;
+  border: 1px solid #b8c0c9;
+  border-radius: 4px;
+  background: #f6f8fa;
+  color: #1d2329;
+  font: inherit;
+}
+.pl-results {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0 8%;
+  list-style: none;
+}
+.pl-results a {
+  color: #1a4fa0;
+  font-weight: 700;
+}
+.pl-result-url {
+  display: block;
+  color: #2d7a3e;
+  font-size: 0.85em;
+}
+.pl-result-archive a {
+  color: #6b2fa0;
+}
+
+/* THE ARCHIVE — 평범한 척하는 사이트 */
+.pl-site {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f4f1ea;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.pl-site-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #2c2a26;
+}
+.pl-logo {
+  letter-spacing: 0.15em;
+}
+.pl-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pl-nav button[aria-current='true'] {
+  background: #2c2a26;
+  border-color: #2c2a26;
+  color: #f4f1ea;
+}
+.pl-site-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.pl-site-main h2 {
+  font-size: 1.3em;
+}
+.pl-open {
+  margin-top: 8px;
+}
+.pl-site-foot {
+  font-size: 0.85em;
+  color: #8a8478;
+  font-style: italic;
+}
+
+/* ── 글리치 ── */
+.pl-screen.is-glitch {
+  animation: pl-glitch 0.18s steps(2) infinite;
+}
+.pl-screen.is-glitch > * {
+  filter: contrast(1.6) hue-rotate(40deg);
+}
+@keyframes pl-glitch {
+  0% {
+    transform: translate(0);
+    clip-path: inset(0 0 0 0);
+  }
+  25% {
+    transform: translate(-3px, 1px);
+    clip-path: inset(12% 0 30% 0);
+  }
+  50% {
+    transform: translate(3px, -1px);
+    clip-path: inset(40% 0 8% 0);
+  }
+  75% {
+    transform: translate(-1px, 2px);
+    clip-path: inset(0 0 55% 0);
+  }
+}
+
+/* 깨진 뒤의 검은 화면 */
+.pl-void {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  height: 100%;
+  padding: 16px;
+  background: #050505;
+  color: #e8e8e8;
+  font-family: var(--font-mono);
+  text-align: center;
+  text-shadow:
+    2px 0 rgb(255 0 60 / 0.6),
+    -2px 0 rgb(0 220 255 / 0.5);
+}
+.pl-void p {
+  animation: pl-appear 0.4s steps(3) both;
+}
+/* 갇힌 뒤: 상태 문구는 아래로 내려 가운데 연출 문구와 겹치지 않게 한다 */
+.pl-void.is-dim {
+  justify-content: flex-end;
+  padding-bottom: 12vh;
+  color: #555;
+  text-shadow: none;
+}
+@keyframes pl-appear {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}
+.pl-connecting {
+  color: var(--muted);
+}
+.pl-retry {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+/* ── 갇힘: 문구 연출 ── */
+.pl-question,
+.pl-escape {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: var(--space-5);
+  font-size: clamp(1.1rem, 3vw, 1.8rem);
+  text-align: center;
+  color: #f2f2f2;
+  pointer-events: none;
+}
+.pl-question {
+  animation: pl-fade 3.6s ease-in-out both;
+}
+.pl-escape {
+  color: var(--danger);
+  font-weight: 700;
+  animation: pl-glitch 0.2s steps(2) 6;
+}
+@keyframes pl-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  20%,
+  75% {
+    opacity: 1;
+  }
+}
+/* 구석 안내: 지직거리며 나타난 뒤(약 1.2초) 은은하게 깜빡이며 남는다. 개발자 도구를 열면 숨긴다 */
+.pl-corner {
+  position: absolute;
+  right: 4vw;
+  bottom: 8vh;
+  margin: 0;
+  padding: 0.5em 0.9em;
+  border: 1px solid rgb(95 211 141 / 0.6);
+  border-radius: var(--radius);
+  background: rgb(4 18 10 / 0.75);
+  color: var(--ok);
+  font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+  font-weight: 700;
+  text-shadow: 0 0 10px rgb(95 211 141 / 0.8);
+  box-shadow: 0 0 28px rgb(95 211 141 / 0.3);
+  animation:
+    pl-corner-in 1.2s steps(1) both,
+    pl-corner-pulse 2s ease-in-out 1.2s infinite;
+}
+.pl-corner::before {
+  content: '> ';
+}
+@keyframes pl-corner-in {
+  0%,
+  20%,
+  45%,
+  70% {
+    opacity: 0;
+  }
+  10%,
+  30%,
+  55%,
+  80%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes pl-corner-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+/* 커서 근처 작은 안내 */
+.pl-nudge {
+  position: fixed;
+  left: 50%;
+  top: 60%;
+  margin: 0;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  pointer-events: none;
+}
+/* 뒤로 가기 경고 (보안 시스템) */
+.pl-toast {
+  position: absolute;
+  top: var(--space-4);
+  left: 50%;
+  z-index: 2;
+  width: min(480px, calc(100% - 32px));
+  transform: translateX(-50%);
+}
+.pl-toast:not([hidden]) {
+  display: block;
+}
+
+/* 대사창은 장면 위에 고정 */
+.prologue .dlg {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-5);
+  z-index: 3;
+  width: min(880px, calc(100% - 32px));
+  transform: translateX(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prologue {
+    --zoom-ms: 1ms;
+  }
+  .pl-screen.is-glitch,
+  .pl-escape,
+  .pl-corner,
+  .pl-question,
+  .pl-void p {
+    animation: none;
+  }
+}
