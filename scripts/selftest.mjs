@@ -97,18 +97,26 @@ await test('4단계: 인코딩된 조각 → answerHash 일치', async () => {
   assert.equal(await hashAnswer(host.code), stage4.answerHash);
 });
 
-await test('7단계: flash 스크립트가 만드는 값 → answerHash 일치', async () => {
+await test('7단계: 진짜 조각 → answerHash 일치, 화면에는 매번 다른 가짜', async () => {
   const stage7 = (await import('../src/stages/stage7.js')).default;
   const shown = [];
   const box = { style: {}, set textContent(v) { shown.push(v); } };
   const win = {};
-  runInNewContext(readFileSync(new URL('../public/stages/stage7-flash.js', import.meta.url), 'utf8'), { window: win, setTimeout, clearTimeout });
+  // assembleParts 가 만드는 진짜 값을 가로채려고 String.fromCharCode 를 감싼다
+  const built = [];
+  const sandboxString = { fromCharCode: (c) => { built.push(c); return String.fromCharCode(c); } };
+  runInNewContext(readFileSync(new URL('../public/stages/stage7-flash.js', import.meta.url), 'utf8'), { window: win, setTimeout, clearTimeout, String: sandboxString });
   win.stage7Flash.start(box);
   await new Promise((r) => setTimeout(r, 1800));
   win.stage7Flash.stop();
-  const value = shown.find((v) => /^[a-z0-9]+$/.test(v));
-  assert.ok(value, '조각이 한 번도 표시되지 않음');
-  assert.equal(await hashAnswer(value), stage7.answerHash);
+  const real = String.fromCharCode(...built.slice(0, 5));
+  assert.equal(await hashAnswer(real), stage7.answerHash);
+  const decoys = shown.filter((v) => /^[a-z0-9]+$/.test(v));
+  assert.ok(decoys.length, '조각이 한 번도 표시되지 않음');
+  for (const d of decoys) {
+    assert.equal(d.length, real.length);
+    assert.notEqual(d, real, '화면에 진짜 값이 그대로 표시됨');
+  }
 });
 
 await test('7단계: 소스에 조각 원문이 문자열로 없음', async () => {

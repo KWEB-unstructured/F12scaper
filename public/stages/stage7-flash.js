@@ -4,7 +4,7 @@
 // 변수명과 줄 구성을 사람이 읽기 좋게 유지한다. (줄 번호를 바꾸면 stage7.js 의 힌트 3 도 같이 고칠 것)
 //
 // 흐름: start() → flashOnce() 를 GAP_MS 마다 반복
-//       flashOnce(): 조각을 조립하고(assembleParts) → FLASH_MS 동안만 화면에 보여 준다(showFlash)
+//       flashOnce(): 진짜 조각을 조립하고(assembleParts) → 화면에는 매번 다른 위장 문자열을 FLASH_MS 동안만 보여 준다(showFlash)
 // 광과민성 배려: 색 반전·강한 번쩍임 없이, 어두운 칸 안에서 글자가 잠깐 나타났다 사라지는 정도로만 한다.
 
 (function () {
@@ -32,6 +32,20 @@
     return result;
   }
 
+  // 화면용 가짜 신호: 진짜와 같은 길이, 같은 글자 종류(소문자+숫자)로 매번 새로 만든다.
+  const DECOY_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+  function makeDecoy(length, realValue) {
+    let result = '';
+    do {
+      result = '';
+      for (let i = 0; i < length; i++) {
+        result += DECOY_CHARS[Math.floor(Math.random() * DECOY_CHARS.length)];
+      }
+    } while (result === realValue);
+    return result;
+  }
+
   function showFlash(value) {
     box.textContent = value;
     box.style.opacity = '1';
@@ -44,7 +58,8 @@
   function flashOnce() {
     flashCount += 1;
     const flashValue = assembleParts(CODES);
-    showFlash(flashValue);
+    const decoyValue = makeDecoy(flashValue.length, flashValue); // 화면에 송출되는 건 위장 신호
+    showFlash(decoyValue);
     nextTimer = setTimeout(flashOnce, GAP_MS);
   }
 
