@@ -90,8 +90,9 @@ export default {
 - 400: `{ "error": "invalid_nickname" }` (길이, 비속어)
 
 ### GET /api/stage5
-5단계 퍼즐용. **항상 실패 상태 코드**를 보내지만 본문·헤더에 단서를 담는다.
-- 4xx/5xx: `{ "error": "...", ... 단서 ... }` + 커스텀 헤더 (`X-...`)
+5단계 퍼즐용. **항상 실패 상태 코드**를 보내지만 본문·헤더에 단서를 담는다. 화면(`src/stages/stage5.js`)은 `res.ok` 만 보고 본문을 읽지 않는다.
+- 403: `{ "error": "access_denied", "message", "record", "key_tail": "열쇠 뒷부분", "note" }` + 헤더 `X-Archive-Key: 열쇠 앞부분`
+- 정답 = 헤더 값 + `key_tail`. 바꿀 때는 [api/stage5.js](../api/stage5.js) 의 두 상수와 stage5.js 의 `answerHash` 를 같이 바꾼다
 
 ### POST /api/verify
 최종 정답 검증 + 기록 계산.
@@ -100,13 +101,16 @@ export default {
 - 200 정답: `{ "ok": true, "finalTime": 2450000, "rank": 3 }` — finalTime 은 ms, 이상 기록이면 `rank: null`
 - 400: `{ "error": "invalid_body" | "invalid_session" }`
 - 429: `{ "error": "too_many_attempts" }` (세션당 오답 50번을 넘었을 때)
-
+- 500: `{ "error": "db_error" | "final_answer_not_configured" }` (Production 에 `FINAL_ANSWER` 가 없을 때)
 - 서버 계산: `finalTime = (now - sessions.started_at) + penaltyMsFromHints(hints)` ([src/core/rules.js](../src/core/rules.js) 공용)
 
 검증 규칙
-- 이미 클리어한 세션: 정답을 다시 검사하지 않고 처음 저장된 `{ ok: true, finalTime, rank }` 를 그대로 돌려준다.
+- 이미 클리어한 세션: 정답을 다시 검사하지 않고 `{ ok: true, finalTime, rank }` 를 돌려준다. finalTime 은 처음 저장된 값 그대로, rank 는 그 기록의 **지금** 순위 (뒤에 더 빠른 사람이 오면 내려간다). 랭킹에서 빠진 기록이면 `rank: null`.
 - 오답 제한: 오답마다 세션의 오답 횟수를 1 올린다. 50번을 넘으면 정답 여부와 상관없이 429.
 - hints: 키는 단계 번호 1~8, 값은 0~3 정수. 벗어나면 400 `invalid_body`.
+- stageTimes: 키는 1~8, 값은 0 이상 정수. 기록용으로 저장만 하고 finalTime 계산에는 쓰지 않는다. answer 는 200자 이하.
+- sessionId 가 uuid 모양이 아니거나 DB 에 없으면 400 `invalid_session`.
+- 처리 순서: 요청 검사 → 세션 조회 → 이미 클리어했으면 저장된 결과 → 오답 제한(429) → 오답 기록 또는 클리어 처리. DB 쪽은 함수 `finish_session` 하나(한 트랜잭션)로 처리하고, 같은 세션의 동시 요청은 행 잠금으로 하나씩 처리된다.
 - 이상 기록: 시작(`sessions.started_at`)부터 1분 안에 클리어하면 기록은 저장하되 랭킹에 넣지 않고 `rank: null`. 기준은 4주차 테스트 후 결정.
 
 알려진 한계
@@ -114,8 +118,13 @@ export default {
 
 ### GET /api/ranking
 - 200: `{ "rankings": [{ "rank": 1, "nickname": "익명", "finalTime": 1820000, "hintsUsed": 0 }] }` (상위 50명, finalTime 오름차순)
+- 순위 = 나보다 기록이 좋은 사람 수 + 1. 기록이 같으면 같은 순위 (1, 2, 2, 4). `/api/verify` 의 `rank` 와 같은 규칙
+- 500: `{ "error": "db_error" }`
+- Vercel Cron 이 하루 한 번 부른다 ([vercel.json](../vercel.json)). Supabase 무료 프로젝트 일시정지 방지
 
 ## 4. DB ([supabase/schema.sql](../supabase/schema.sql))
-- `sessions(id, nickname, started_at, finished_at, hints_used, wrong_attempts, stage_times)`
+- `sessions(id, nickname, started_at, finished_at, hints_used, wrong_attempts, stage_times, final_time)`
 - `rankings(session_id, nickname, final_time, hints_used, created_at)`
 - RLS 켜고 정책 없음 → service_role(서버)만 접근.
+- 함수 `finish_session(...)` ([migrations/002](../supabase/migrations/002_finish_session.sql)): `/api/verify` 의 DB 처리. 실행 권한은 service_role 만.
+- 스키마를 바꿀 때는 `supabase/migrations/` 에 번호를 붙인 새 파일을 만들고, `schema.sql` 에도 최종 모양을 반영한다.
