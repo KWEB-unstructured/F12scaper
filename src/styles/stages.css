@@ -1,6 +1,63 @@
 /* 단계 퍼즐 전용 스타일. 플레이어가 Styles 패널에서 직접 읽고 고치는 규칙이므로
    선택자와 속성을 짧고 읽기 쉽게 유지한다. 단계별로 주석으로 구역을 나눈다. */
 
-/* ── 2단계 (정씨) ── */
+/* ── 공통: 퍼즐 문장 ── */
+.puzzle-label {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.puzzle-text {
+  margin: var(--space-6) 0;
+  font-size: var(--fs-lg);
+  text-align: center;
+}
+.puzzle-empty {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ── 2단계 (정씨) ──
+   .next 에는 display 를 쓰지 않는다. 숨김은 버튼의 인라인 style 한 곳에만 둔다. */
+.wizard {
+  max-width: 520px;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+.wizard-title {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+}
+.wizard-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 140px;
+  padding: var(--space-5) var(--space-4);
+}
+.wizard-body .key {
+  margin-top: var(--space-3);
+  color: var(--muted);
+}
+.wizard-body .key.found {
+  color: var(--ok);
+  font-weight: 700;
+}
+.wizard-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+}
+.next {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 700;
+}
 
 /* ── 6단계 (정씨): 375px 이하에서만 보이는 문장 ── */

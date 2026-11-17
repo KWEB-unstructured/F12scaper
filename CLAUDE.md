@@ -28,8 +28,8 @@
 
 ## 담당 (파일 소유권)
 다른 사람 담당 파일을 고쳐야 하면 PR 설명에 이유를 적고 담당자 리뷰를 받는다.
-- **정씨 (프론트·UI)**: `index.html`, `src/styles/`, `src/screens/`, `src/stages/stage1.js` `stage2.js` `stage6.js`
-- **형씨 (로직·스토리)**: `src/core/game.js` `state.js` `hash.js` `rules.js`, `src/content/`, `src/stages/stage3.js` `stage4.js` `stage7.js` `types.js`, `public/stages/`, `scripts/`
+- **정씨 (프론트·UI)**: `index.html`, `src/styles/`, `src/screens/`(프롤로그 포함), `src/ui/`(대사창·콘솔 출력 등 공용 부품), `public/prologue/`, `src/stages/stage1.js` `stage2.js` `stage6.js`
+- **형씨 (로직·스토리)**: `src/core/game.js` `state.js` `hash.js` `rules.js`, `src/content/`(화자 이름·대사·진행률 라벨 데이터), `src/stages/stage3.js` `stage4.js` `stage7.js` `types.js`, `public/stages/`, `scripts/`
 - **김씨 (백엔드·배포)**: `api/`, `supabase/`, `src/core/api.js`, `vite.config.js`, `src/stages/stage5.js` `stage8.js`, 배포 설정
 
 ## Git

@@ -1,41 +1,41 @@
-// 담당: 정씨(화면) · 형씨(문구) · 인트로·스토리 (상황 설명, 닉네임 입력, F12 여는 법)
-import { INTRO_LINES, F12_GUIDE } from '../content/story.js';
-import { startSession } from '../core/api.js';
-import { createProgress } from '../core/state.js';
+// 담당: 정씨(화면) · 형씨(문구는 content/story.js 의 LOGIN)
+// 닉네임 입력 화면. "도서관 PC 로그인"으로 연출하고, 받은 이름을 들고 프롤로그로 간다.
+// /api/start 는 여기서 부르지 않는다. 프롤로그가 끝날 때 불러서 프롤로그 시간이 기록에 들어가지 않게 한다.
+// (F12 여는 법 안내는 없앴다. 플레이어가 프롤로그 안에서 스스로 F12 를 누르게 만드는 게 목표)
+import { LOGIN } from '../content/story.js';
+import { savePrologue } from './prologue-state.js';
+import { BACKDROP } from './start.js';
 
 export function renderIntro(root, { go }) {
+  // 시작 화면과 같은 흐린 도서관 배경 위에 로그인 창을 띄운다 (도서관 PC 로그인 느낌)
   root.innerHTML = `
+    ${BACKDROP}
     <section class="screen intro-screen">
-      <div class="story" data-story></div>
-      <p class="muted" data-f12></p>
-      <form data-form>
-        <label for="nickname">닉네임</label>
+      <div class="screen-bar"><span data-bar></span></div>
+      <h1 data-title></h1>
+      <p class="muted" data-desc></p>
+      <form class="nick-form" data-form>
+        <label for="nickname" data-label></label>
         <input id="nickname" name="nickname" maxlength="16" autocomplete="off" required />
-        <button type="submit" class="primary">출근하기</button>
+        <button type="submit" class="primary" data-submit></button>
       </form>
-      <p class="error" data-error hidden></p>
     </section>`;
 
-  const story = root.querySelector('[data-story]');
-  for (const line of INTRO_LINES) story.append(Object.assign(document.createElement('p'), { textContent: line }));
-  root.querySelector('[data-f12]').textContent = `개발자 도구 여는 법 — ${F12_GUIDE}`;
+  const $ = (sel) => root.querySelector(sel);
+  $('[data-bar]').textContent = LOGIN.bar;
+  $('[data-title]').textContent = LOGIN.title;
+  $('[data-desc]').textContent = LOGIN.desc;
+  $('[data-label]').textContent = LOGIN.label;
+  $('[data-submit]').textContent = LOGIN.submit;
 
-  const form = root.querySelector('[data-form]');
-  const error = root.querySelector('[data-error]');
-  form.addEventListener('submit', async (e) => {
+  const form = $('[data-form]');
+  form.nickname.focus();
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const button = form.querySelector('button');
-    button.disabled = true;
-    error.hidden = true;
-    try {
-      const nickname = form.nickname.value.trim();
-      const { sessionId, startedAt } = await startSession(nickname);
-      createProgress({ sessionId, nickname, startedAt });
-      go('stage');
-    } catch (err) {
-      error.textContent = err.status === 400 ? '사용할 수 없는 닉네임입니다.' : '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.';
-      error.hidden = false;
-      button.disabled = false;
-    }
+    const nickname = form.nickname.value.trim();
+    if (!nickname) return;
+    // 비속어 등 서버 검사는 프롤로그 끝의 /api/start 에서 한다 (거절되면 그 자리에서 다시 받는다)
+    savePrologue({ scene: 'library', nickname, printed: [] });
+    go('prologue');
   });
 }
