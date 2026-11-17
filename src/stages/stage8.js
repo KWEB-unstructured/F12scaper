@@ -8,7 +8,7 @@ export default {
   title: '관리자 패널의 마지막 자물쇠',
   tool: '종합',
   toolUsage: '',
-  guide: ['선배 조교: TODO 대사'],
+  guide: ['TODO 대사'],
   answerHash: null,
   verify: 'server',
   hints: ['TODO 힌트 1', 'TODO 힌트 2', 'TODO 힌트 3'],

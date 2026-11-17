@@ -1,13 +1,13 @@
 // 단계 진행 규칙: 정답 확인, 힌트·감점, 단계 전환. UI는 여기 함수만 부르고 규칙은 직접 계산하지 않는다.
 
-import { hashAnswer, normalize } from './hash.js';
+import { normalize } from './hash.js';
 import { saveProgress } from './state.js';
+import { checkAnswer, recordWrong, WRONG_BEFORE_HINT_SUGGEST } from './answer.js';
 import { HINT_PENALTY_MIN, penaltyMsFromHints, countHints } from './rules.js';
 import { STAGES } from '../stages/index.js';
 
-export { HINT_PENALTY_MIN };
-/** 같은 단계에서 이만큼 틀리면 첫 힌트를 권한다. */
-export const WRONG_BEFORE_HINT_SUGGEST = 5;
+// 정답 확인·오답 집계는 answer.js 로 옮겼다. 기존 import 경로를 유지하려고 다시 내보낸다.
+export { HINT_PENALTY_MIN, checkAnswer, recordWrong, WRONG_BEFORE_HINT_SUGGEST };
 
 export const TOTAL_STAGES = STAGES.length;
 
@@ -19,18 +19,6 @@ export function currentStage(p) {
 /** 진행률 (0~100). 푼 단계 수 기준. 화면 라벨은 content/characters.js 의 PROGRESS_LABEL */
 export function recoveryPercent(p) {
   return Math.round(((p.stage - 1) / TOTAL_STAGES) * 100);
-}
-
-/** 1~7단계: 입력값 해시를 단계의 answerHash 와 비교한다. */
-export async function checkAnswer(stage, input) {
-  return (await hashAnswer(input)) === stage.answerHash;
-}
-
-/** 오답 횟수를 올리고 현재 횟수를 돌려준다. */
-export function recordWrong(p) {
-  p.wrong[p.stage] = (p.wrong[p.stage] ?? 0) + 1;
-  saveProgress(p);
-  return p.wrong[p.stage];
 }
 
 /** 다음 힌트를 열고 그 문구를 돌려준다. 이미 3개 다 썼으면 null. */

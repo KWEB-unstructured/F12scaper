@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>F12 이스케이프 · 로직 테스트</title>
+    <style>
+      body { font: 14px/1.5 sans-serif; max-width: 760px; margin: 1em auto; padding: 0 1em; }
+      fieldset { margin: 0 0 1em; }
+      #puzzle { min-height: 5em; padding: 1em; border: 1px dashed #888; }
+      #log { height: 14em; overflow: auto; background: #111; color: #ddd; font: 12px monospace; padding: .5em; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>로직 테스트 (임시)</h1>
+    <p>정씨 UI 없이 core/engine.js 로 단계를 플레이해 보는 페이지입니다. 디자인 없음.</p>
+    <fieldset>
+      <legend>세션</legend>
+      <button id="new">새 게임 (로컬)</button>
+      단계로 이동: <select id="jump"></select>
+      <button id="reset">처음부터 다시</button>
+    </fieldset>
+    <div id="status"></div>
+    <div id="guide"></div>
+    <div id="puzzle"></div>
+    <form id="form">
+      <input id="answer" autocomplete="off" placeholder="정답 입력" />
+      <button>제출</button>
+      <button type="button" id="hint">힌트</button>
+    </form>
+    <div id="taunt" style="color:#a00"></div>
+    <ol id="hints"></ol>
+    <h3>이벤트 로그</h3>
+    <div id="log"></div>
+    <script type="module" src="./test.js"></script>
+  </body>
+</html>
