@@ -19,7 +19,7 @@ import { startSession, verifyFinal } from './api.js';
 import { DEFAULT_TAUNTS, HINT_SUGGEST, SERVER_DOWN } from '../content/story.js';
 import { DEFAULT_SPEAKER } from '../content/characters.js';
 
-/** 대사 한 줄 → { speaker, text }. 문자열이면 기본 화자(브라우저), 객체면 speaker 가 없을 때만 기본 화자 */
+/** 대사 한 줄 → { speaker, text }. 문자열이면 기본 화자(주인공 독백), 객체면 speaker 가 없을 때만 기본 화자 */
 const toLine = (line) => (typeof line === 'string' ? { speaker: DEFAULT_SPEAKER, text: line } : { speaker: DEFAULT_SPEAKER, ...line });
 
 /** 구독할 수 있는 이벤트 이름 */

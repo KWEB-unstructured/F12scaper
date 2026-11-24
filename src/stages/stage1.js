@@ -7,7 +7,7 @@ export default {
   title: '개발자의 흔적',
   tool: 'Elements — HTML 주석',
   toolUsage: '배포된 페이지의 마크업을 직접 보고, 화면에 안 보이는 요소나 남은 주석을 확인한다.',
-  // 대사는 화자를 적지 않으면 브라우저가 말한다 (content/characters.js 의 DEFAULT_SPEAKER)
+  // 대사는 화자를 적지 않으면 주인공 독백이다 (content/characters.js 의 DEFAULT_SPEAKER)
   guide: [
     '나는 브라우저야. 콘솔에 남은 메시지 봤어? 누군가 이 페이지에 메모를 숨겨 뒀대.',
     '개발자 도구에서 Elements 탭을 열어 봐. 화면에 안 보이는 것도 거기엔 다 있어.',

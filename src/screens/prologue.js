@@ -12,7 +12,7 @@
 // 상호작용 요소는 모두 실제 DOM 이다. 이후 단계에서 Elements 로 조사할 수 있어야 한다.
 import { LIBRARY, MONITOR, ARCHIVE, GLITCH, TRAPPED } from '../content/prologue.js';
 import { SITE_NAME } from '../content/story.js';
-import { SPEAKERS } from '../content/characters.js';
+import { speakerName } from '../content/characters.js';
 import { AFTER_F12 } from '../content/console-messages.js';
 import { createDialogue } from '../ui/dialogue.js';
 import { printConsole } from '../ui/console-log.js';
@@ -92,11 +92,13 @@ export function renderPrologue(root, { go }) {
     printConsole(key);
   }
 
-  /** 보안 시스템 짧은 알림 */
+  /** 크롤러 짧은 알림 (뒤로 가기 경고) */
   let toastTimer = 0;
   function toast(text) {
     const el = $('[data-toast]');
-    el.replaceChildren(make('span', { className: 'who', textContent: SPEAKERS.security.name }), make('p', { textContent: text }));
+    // 프롤로그는 4단계 반전 전이라 정체를 숨긴 이름("알 수 없는 프로세스")
+    el.dataset.speaker = 'crawler';
+    el.replaceChildren(make('span', { className: 'who', textContent: speakerName('crawler', false) }), make('p', { textContent: text }));
     el.hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => (el.hidden = true), 2600);

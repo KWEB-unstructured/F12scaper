@@ -1,9 +1,9 @@
 // 담당: 정씨 · 대사창 (프롤로그와 이후 단계 연출에서 같이 쓴다)
-// - 화자 variant: narration / browser / security / unknown (content/characters.js)
+// - 화자 variant: narration(주인공 독백) / developer(개발자) / crawler(크롤러) (content/characters.js)
 // - 타자 효과. 클릭·스페이스·엔터로 넘기고, 타자 중에 누르면 그 줄을 즉시 다 보여 준다
 // - 스킵 버튼: 남은 대사를 건너뛴다
 // 대사는 '<' 가 들어갈 수 있으므로 textContent 로만 넣는다.
-import { SPEAKERS } from '../content/characters.js';
+import { speakerName } from '../content/characters.js';
 
 /** @typedef {{ speaker: import('../content/characters.js').SpeakerKey, text: string }} Line */
 
@@ -11,9 +11,11 @@ const CHAR_MS = 38;
 
 /**
  * @param {HTMLElement} parent 대사창을 붙일 곳
+ * @param {{ nameOf?: (key: import('../content/characters.js').SpeakerKey) => string }} [opts]
+ *        nameOf: 화자 이름. 기본은 정체를 숨긴 이름 (4단계 반전 전). 단계 화면은 반전 여부에 맞춰 넘긴다
  * @returns {{ el: HTMLElement, play: (lines: Line[]) => Promise<void>, skip: () => void, destroy: () => void }}
  */
-export function createDialogue(parent) {
+export function createDialogue(parent, { nameOf = (key) => speakerName(key, false) } = {}) {
   const el = document.createElement('div');
   el.className = 'dlg';
   el.hidden = true;
@@ -42,7 +44,7 @@ export function createDialogue(parent) {
   function showLine() {
     const line = lines[index];
     el.dataset.speaker = line.speaker;
-    who.textContent = SPEAKERS[line.speaker]?.name ?? '';
+    who.textContent = nameOf(line.speaker);
     full.textContent = line.text;
     chars = [...line.text];
     shown = 0;

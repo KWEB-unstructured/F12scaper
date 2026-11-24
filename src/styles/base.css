@@ -572,25 +572,31 @@ input:focus {
   background: var(--accent);
   box-shadow: 0 0 8px rgb(245 165 36 / 0.6);
 }
-.recovery {
+/* 인증 키 조각: 7칸 중 모은 만큼 채운다 */
+.pieces {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
-.recovery strong {
+.pieces strong {
   color: var(--ok);
+  font-variant-numeric: tabular-nums;
 }
-.meter {
-  width: 88px;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--border);
-  overflow: hidden;
+.pips {
+  display: flex;
+  gap: 3px;
 }
-.meter > span {
-  display: block;
-  height: 100%;
+.pips i {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--ok-line);
+  border-radius: 2px;
+  transform: rotate(45deg) scale(0.8); /* 작은 열쇠 조각처럼 마름모 */
+}
+.pips i.on {
   background: var(--ok);
+  border-color: var(--ok);
+  box-shadow: 0 0 6px rgb(95 211 141 / 0.6);
 }
 .clock .timer {
   color: var(--fg);
@@ -676,7 +682,7 @@ input:focus {
   font-size: 1rem;
 }
 
-/* 정보 표시줄: 브라우저가 말하는 곳 (실제 크롬의 "번역할까요?" 줄처럼 주소창 아래에 내려온다) */
+/* 정보 표시줄: 주인공 독백(시작 대사·힌트)이 뜨는 곳 (실제 크롬의 "번역할까요?" 줄처럼 주소창 아래에 내려온다) */
 .infobar {
   display: flex;
   align-items: flex-start;
@@ -708,6 +714,10 @@ input:focus {
   font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--speaker, var(--accent));
+}
+/* 주인공 독백은 이름 없이 본문만 */
+.infobar-who:empty {
+  display: none;
 }
 .infobar-text p + p {
   margin-top: var(--space-1);
@@ -836,14 +846,15 @@ input:focus {
 .who:empty {
   display: none;
 }
-[data-speaker='security'] {
-  --speaker: var(--danger);
+/* 주인공 독백 = 앰버 · 개발자 = 하늘색 · 크롤러 = 빨강 */
+[data-speaker='narration'] {
+  --speaker: var(--accent);
 }
-[data-speaker='unknown'] {
+[data-speaker='developer'] {
   --speaker: var(--unknown);
 }
-[data-speaker='narration'] {
-  --speaker: var(--muted);
+[data-speaker='crawler'] {
+  --speaker: var(--danger);
 }
 [data-speaker] .who {
   color: var(--speaker, var(--accent));
@@ -1048,22 +1059,29 @@ input:focus {
     transform: translateY(8px);
   }
 }
-.clear-meter {
-  width: min(220px, 40vw);
-  height: 8px;
-  border-radius: 4px;
-  background: var(--border);
-  overflow: hidden;
+/* 통과 연출의 조각 칸: 크게, 새로 얻은 칸은 튀어나오듯 켜진다 */
+.clear-pips {
+  gap: 8px;
 }
-.clear-meter > span {
-  display: block;
-  height: 100%;
-  background: var(--ok);
-  box-shadow: 0 0 10px rgb(95 211 141 / 0.8);
-  transition: width 0.7s ease-out;
+.clear-pips i {
+  width: 16px;
+  height: 16px;
+}
+.clear-pips i.new {
+  animation: pip-pop 0.5s ease-out;
+}
+@keyframes pip-pop {
+  0% {
+    transform: rotate(45deg) scale(0.3);
+    box-shadow: 0 0 0 rgb(95 211 141 / 0);
+  }
+  60% {
+    transform: rotate(45deg) scale(1.25);
+    box-shadow: 0 0 18px rgb(95 211 141 / 0.9);
+  }
 }
 .clear-progress strong {
-  min-width: 7ch;
+  min-width: 4ch;
   color: var(--ok);
   font-variant-numeric: tabular-nums;
 }
@@ -1166,11 +1184,8 @@ tr.mine {
     flex: 1 1 100%;
     margin-right: 0;
   }
-  .meter {
-    width: 56px;
-  }
-  /* "탈출 진행률" 글자는 숨기고 막대와 % 만 */
-  .recovery > span:first-child {
+  /* "인증 키 조각" 글자는 숨기고 칸과 숫자만 */
+  .pieces > span:first-child {
     display: none;
   }
   .hud-menu {
@@ -1217,6 +1232,7 @@ tr.mine {
   .modal-box,
   .clear-fx,
   .clear-title,
+  .clear-pips i.new,
   .clear-progress {
     animation: none;
   }

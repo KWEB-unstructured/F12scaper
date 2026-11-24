@@ -4,16 +4,15 @@
 //   .game
 //     .hud          상단: 구간·단계 이름 · 진행 점 · 탈출 진행률 · 기록 · ☰ 메뉴(처음부터 다시)
 //     .site         가운데: 가짜 브라우저 창 (주소창 + 정보 표시줄 + 퍼즐)
-//       .infobar    브라우저가 말하는 곳 (안내·힌트). 이미 받은 힌트는 ‹ › 로 다시 본다
+//       .infobar    주인공 독백(시작 대사·힌트)이 뜨는 곳. 이미 받은 힌트는 ‹ › 로 다시 본다
 //       .puzzle     퍼즐이 mount 되는 곳. 단계 파일들이 .puzzle[data-puzzle] 을 전제로 하므로 바꾸지 않는다
-//     .game-bar     아래: 정답 입력(터미널) + 브라우저에게 묻기(힌트)
-//     .dlg          단계를 처음 시작할 때 브라우저 대사를 대사창으로 (ui/dialogue.js)
-//     .game-toast   보안 시스템 경고 (위에서 내려왔다 사라짐) + 화면 가장자리 붉게
+//     .game-bar     아래: 정답 입력(터미널) + 힌트 보기
+//     .dlg          단계를 처음 시작할 때 시작 대사를 대사창으로 (ui/dialogue.js)
+//     .game-toast   크롤러 경고 (입력창 위에서 떠올랐다 사라짐) + 화면 가장자리 붉게
 //
 // 화자 이름·진행률 라벨·문구는 content/ 데이터 파일에서 읽는다. 대사·힌트는 textContent 로만 넣는다.
 import {
   currentStage,
-  recoveryPercent,
   checkAnswer,
   recordWrong,
   useHint,
@@ -29,9 +28,18 @@ import { loadProgress, resetProgress } from '../core/state.js';
 import { verifyFinal } from '../core/api.js';
 import { formatDuration } from '../core/format.js';
 import { DEFAULT_TAUNTS, HINT_SUGGEST, PROMPT, SERVER_DOWN, TOO_MANY_ATTEMPTS, GAME_UI, STAGE_CLEAR, stageUrl } from '../content/story.js';
-import { SPEAKERS, DEFAULT_SPEAKER, PROGRESS_LABEL, wrongAlertTitle } from '../content/characters.js';
+import { speakerName, DEFAULT_SPEAKER, PROGRESS_LABEL, wrongAlertTitle } from '../content/characters.js';
 import { createDialogue } from '../ui/dialogue.js';
 import { confirmModal } from '../ui/modal.js';
+import { isRevealed, clearScenes } from './scenes-state.js';
+
+/** 모을 수 있는 인증 키 조각 수 (1~7단계에서 하나씩, 8단계는 조합) */
+const TOTAL_PIECES = TOTAL_STAGES - 1;
+/** 지금까지 모은 조각 수. 현재 단계 앞의 단계를 모두 풀었으므로 stage - 1 */
+const piecesOf = (stageNo) => Math.min(Math.max(stageNo - 1, 0), TOTAL_PIECES);
+/** 조각 칸 n 개 중 got 개 채운 표시 요소들 */
+const pipsHtml = (got, extraClass = '') =>
+  Array.from({ length: TOTAL_PIECES }, (_, i) => `<i class="${i < got ? 'on' : ''} ${extraClass}"></i>`).join('');
 
 /** 기획서의 구간 이름 (튜토리얼 1~3 · 본게임 4~6 · 보스 7 · 최종 8) */
 function sectionOf(id) {
@@ -41,7 +49,7 @@ function sectionOf(id) {
   return '최종';
 }
 
-/** 대사 한 줄 → { speaker, text }. 문자열이면 기본 화자(브라우저) */
+/** 대사 한 줄 → { speaker, text }. 문자열이면 기본 화자(주인공 독백) */
 const toLine = (line) => (typeof line === 'string' ? { speaker: DEFAULT_SPEAKER, text: line } : { speaker: DEFAULT_SPEAKER, ...line });
 
 /**
@@ -69,7 +77,9 @@ export function renderStage(root, { go }) {
   if (!p) return go('start');
   if (isFinished(p)) return go('clear');
   const stage = currentStage(p);
-  const percent = recoveryPercent(p);
+  const pieces = piecesOf(p.stage);
+  // 개발자·크롤러의 진짜 이름은 4단계 반전 장면을 본 뒤에 보여 준다
+  const nameOf = (key) => speakerName(key, isRevealed(p));
 
   root.innerHTML = `
     <section class="game">
@@ -79,9 +89,9 @@ export function renderStage(root, { go }) {
           <h1 class="hud-title" data-title></h1>
         </div>
         <ol class="steps" data-steps aria-hidden="true"></ol>
-        <span class="recovery"><span data-progress-label></span>
-          <span class="meter" aria-hidden="true"><span style="width: ${percent}%"></span></span>
-          <strong>${percent}%</strong></span>
+        <span class="pieces"><span data-progress-label></span>
+          <span class="pips" aria-hidden="true">${pipsHtml(pieces)}</span>
+          <strong>${pieces}/${TOTAL_PIECES}</strong></span>
         <span class="clock" title="실제 경과 시간 + 힌트 감점"><span aria-hidden="true">⏱</span> <span class="timer" data-timer></span></span>
         <div class="hud-menu">
           <button type="button" class="hud-menu-btn" data-menu aria-expanded="false" aria-haspopup="true">☰</button>
@@ -130,8 +140,8 @@ export function renderStage(root, { go }) {
         <p class="clear-title" data-clear-title></p>
         <div class="clear-progress">
           <span data-clear-label></span>
-          <span class="clear-meter" aria-hidden="true"><span data-clear-fill></span></span>
-          <strong data-clear-pct></strong>
+          <span class="pips clear-pips" data-clear-pips aria-hidden="true"></span>
+          <strong data-clear-count></strong>
         </div>
       </div>
     </section>`;
@@ -157,7 +167,7 @@ export function renderStage(root, { go }) {
     ),
   );
 
-  // ── 정보 표시줄: 브라우저가 짧게 말하는 곳. 메시지가 여러 개면 ‹ › 로 넘겨 본다 ──
+  // ── 정보 표시줄: 주인공 독백(시작 대사·힌트)이 짧게 뜨는 곳. 메시지가 여러 개면 ‹ › 로 넘겨 본다 ──
   /** @type {{ speaker: string, label?: string, lines: string[] }[]} */
   const infoItems = [];
   let infoIndex = 0;
@@ -167,7 +177,7 @@ export function renderStage(root, { go }) {
     const item = infoItems[infoIndex];
     if (!item) return;
     infobar.dataset.speaker = item.speaker;
-    $('[data-info-who]').textContent = item.label ?? SPEAKERS[item.speaker]?.name ?? '';
+    $('[data-info-who]').textContent = item.label ?? nameOf(item.speaker);
     $('[data-info-text]').replaceChildren(...item.lines.map((text) => make('p', { textContent: text })));
     const many = infoItems.length > 1;
     $('[data-info-pager]').hidden = !many;
@@ -207,12 +217,13 @@ export function renderStage(root, { go }) {
     pushInfo({ speaker, lines: [text] });
   };
 
-  // ── 보안 시스템 경고: 위에서 내려왔다 사라지는 알림 + 화면 가장자리 붉게 ──
+  // ── 크롤러 경고: 입력창 위에서 떠올랐다 사라지는 알림 + 화면 가장자리 붉게 ──
+  // 4단계 반전 전에는 "알 수 없는 프로세스", 반전 뒤에는 "크롤러"
   let toastTimer = 0;
   const taunt = (text, count) => {
     const el = $('[data-taunt]');
-    el.dataset.speaker = 'security';
-    el.replaceChildren(make('span', { className: 'who', textContent: SPEAKERS.security.name }));
+    el.dataset.speaker = 'crawler';
+    el.replaceChildren(make('span', { className: 'who', textContent: nameOf('crawler') }));
     if (count) el.append(make('p', { className: 'alert-title', textContent: wrongAlertTitle(count) }));
     el.append(make('p', { textContent: text }));
     el.hidden = false;
@@ -227,9 +238,9 @@ export function renderStage(root, { go }) {
     toastTimer = setTimeout(() => (el.hidden = true), 4000);
   };
 
-  // ── 힌트: 브라우저에게 묻기 ──
+  // ── 힌트: 주인공이 스스로 떠올리는 생각으로 보여 준다 ──
   const hintBtn = $('[data-hint]');
-  const hintItem = (text, i) => ({ speaker: 'browser', label: `${SPEAKERS.browser.name} · 힌트 ${i + 1}/${stage.hints.length}`, lines: [text] });
+  const hintItem = (text, i) => ({ speaker: 'narration', label: `힌트 ${i + 1}/${stage.hints.length}`, lines: [text] });
   const renderHintButton = () => {
     const used = p.hints[p.stage] ?? 0;
     const total = stage.hints.length;
@@ -246,7 +257,7 @@ export function renderStage(root, { go }) {
     infoIndex = infoItems.length - 1;
     if (infoItems.length) openInfo();
   };
-  const dialogue = createDialogue(screen);
+  const dialogue = createDialogue(screen, { nameOf });
   const focusAnswer = () => {
     if (!form.hidden) form.answer.focus();
   };
@@ -259,15 +270,13 @@ export function renderStage(root, { go }) {
   const interval = setInterval(tick, 1000);
 
   // ── 단계 통과: 저장은 바로 하고, 연출(약 1.8초)이 끝나면 다음 단계로 ──
-  // 화면 네 변 초록빛 → 가운데 ACCESS GRANTED 두 번 깜박 → 탈출 진행률 막대가 차오름.
+  // 화면 네 변 초록빛 → 가운데 ACCESS GRANTED 두 번 깜박 → 인증 키 조각 칸이 하나 채워짐.
   // 클릭·Enter·Space·Esc 로 넘길 수 있다. 입력창으로 맞히든 콘솔 unlock() 으로 통과하든 같은 연출.
   let solved = false;
   let clearTimers = [];
-  let clearFrame = 0;
   let removeClearKeys = null;
   const CLEAR_MS = 1800;
-  const COUNT_START_MS = 800;
-  const COUNT_MS = 700;
+  const PIECE_AT_MS = 800;
 
   const playClear = (from, to, final) =>
     new Promise((resolve) => {
@@ -279,10 +288,10 @@ export function renderStage(root, { go }) {
       const fx = $('[data-clear]');
       $('[data-clear-title]').textContent = final ? STAGE_CLEAR.finalTitle : STAGE_CLEAR.title;
       $('[data-clear-label]').textContent = PROGRESS_LABEL;
-      const fill = $('[data-clear-fill]');
-      const pct = $('[data-clear-pct]');
-      fill.style.width = `${from}%`;
-      pct.textContent = `${from}% → ${to}%`;
+      const pips = $('[data-clear-pips]');
+      const count = $('[data-clear-count]');
+      pips.innerHTML = pipsHtml(from);
+      count.textContent = `${from}/${TOTAL_PIECES}`;
       fx.hidden = false;
       $('[data-edge]').classList.remove('is-on');
       $('[data-edge]').classList.add('is-grant');
@@ -292,22 +301,17 @@ export function renderStage(root, { go }) {
         if (done) return;
         done = true;
         clearTimers.forEach(clearTimeout);
-        cancelAnimationFrame(clearFrame);
         removeClearKeys?.();
         resolve();
       };
-      // 진행률 막대와 숫자를 from → to 로 채운다
+      // 새로 얻은 조각 칸을 채운다 (8단계는 이미 7/7 이라 그대로)
       clearTimers.push(
         setTimeout(() => {
-          fill.style.width = `${to}%`;
-          const t0 = performance.now();
-          const step = (now) => {
-            const k = Math.min(1, (now - t0) / COUNT_MS);
-            pct.textContent = `${Math.round(from + (to - from) * k)}%`;
-            if (k < 1) clearFrame = requestAnimationFrame(step);
-          };
-          clearFrame = requestAnimationFrame(step);
-        }, COUNT_START_MS),
+          pips.querySelectorAll('i').forEach((pip, i) => {
+            if (i >= from && i < to) pip.classList.add('on', 'new');
+          });
+          count.textContent = `${to}/${TOTAL_PIECES}`;
+        }, PIECE_AT_MS),
       );
       clearTimers.push(setTimeout(finish, CLEAR_MS));
 
@@ -330,10 +334,10 @@ export function renderStage(root, { go }) {
   const solve = (fragment) => {
     if (solved) return;
     solved = true;
-    const from = recoveryPercent(p);
+    const from = piecesOf(p.stage);
     completeStage(p, fragment);
     const final = isFinished(p);
-    playClear(from, final ? 100 : recoveryPercent(p), final).then(() => go('stage'));
+    playClear(from, piecesOf(p.stage), final).then(() => go('stage'));
   };
 
   const form = $('[data-form]');
@@ -425,6 +429,7 @@ export function renderStage(root, { go }) {
     });
     if (!ok) return;
     resetProgress();
+    clearScenes();
     go('start');
   });
 
@@ -445,7 +450,6 @@ export function renderStage(root, { go }) {
     clearInterval(interval);
     clearTimeout(toastTimer);
     clearTimers.forEach(clearTimeout);
-    cancelAnimationFrame(clearFrame);
     removeClearKeys?.();
     document.removeEventListener('click', onDocClick);
     dialogue.destroy();
