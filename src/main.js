@@ -1,8 +1,8 @@
 import './styles/base.css';
 import './styles/stages.css';
 import './styles/prologue.css';
-import { loadProgress, resetProgress } from './core/state.js';
-import { isFinished } from './core/game.js';
+import { loadProgress, resetProgress, createProgress, saveProgress } from './core/state.js';
+import { isFinished, TOTAL_STAGES } from './core/game.js';
 import { renderStart } from './screens/start.js';
 import { renderMobile, isMobileDevice } from './screens/mobile.js';
 import { renderIntro } from './screens/intro.js';
@@ -40,13 +40,22 @@ function go(name) {
 //   ?reset          진행·프롤로그를 모두 지우고 시작 화면부터
 //   ?scene=archive  그 프롤로그 장면부터 (library | monitor | archive | glitch | trapped)
 // 게임 안의 "처음부터 다시"(resetProgress)와는 별개다.
+//   ?stage=6        그 단계부터 바로 (서버 없이 개발용 진행을 만든다. 앞 단계 조각은 비어 있다)
 if (import.meta.env.DEV) {
   const params = new URLSearchParams(location.search);
   const scene = params.get('scene');
-  if (params.has('reset') || scene) {
+  const stage = Number(params.get('stage'));
+  if (params.has('reset') || scene || params.has('stage')) {
     resetProgress();
     clearPrologue();
     if (SCENES.includes(scene)) savePrologue({ scene, nickname: '개발자', printed: [] });
+    if (Number.isInteger(stage) && stage >= 1 && stage <= TOTAL_STAGES) {
+      // 진행 저장 형식은 core/state.js 가 정한다. 만든 뒤 단계 번호만 바꾼다.
+      // sessionId 를 고정해 두면 같은 탭에서는 시작 대사창을 한 번만 본다 (다시 보려면 새 탭)
+      const p = createProgress({ sessionId: 'dev-local', nickname: '개발자', startedAt: new Date().toISOString() });
+      p.stage = stage;
+      saveProgress(p);
+    }
     history.replaceState(null, '', location.pathname);
   }
 }
