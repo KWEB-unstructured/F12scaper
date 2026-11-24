@@ -9,6 +9,26 @@ export function allowMethod(req, res, method) {
   return false;
 }
 
-export function badRequest(res, error) {
-  return res.status(400).json({ error });
+/** 400 응답. message 를 주면 { error, message } (이야기 문구를 같이 보낼 때) */
+export function badRequest(res, error, message) {
+  return res.status(400).json(message ? { error, message } : { error });
+}
+
+/**
+ * 요청 본문을 객체로 읽는다. 못 읽으면 null.
+ * Vercel 은 Content-Type 에 따라 req.body 를 다르게 준다: application/json → 객체, text/plain → 문자열.
+ * 콘솔에서 fetch(url, { method: 'POST', body: JSON.stringify(...) }) 만 쓰면 헤더가 없어 text/plain 으로 오므로
+ * 문자열도 JSON 으로 풀어 본다.
+ */
+export function readJsonBody(req) {
+  let body = req.body;
+  if (Buffer.isBuffer(body)) body = body.toString('utf8');
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      return null;
+    }
+  }
+  return body !== null && typeof body === 'object' && !Array.isArray(body) ? body : null;
 }
