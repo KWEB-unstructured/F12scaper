@@ -4,6 +4,7 @@
 // (F12 여는 법 안내는 없앴다. 플레이어가 프롤로그 안에서 스스로 F12 를 누르게 만드는 게 목표)
 import { LOGIN } from '../content/story.js';
 import { savePrologue } from './prologue-state.js';
+import { clearScenes } from './scenes-state.js';
 import { BACKDROP } from './start.js';
 
 export function renderIntro(root, { go }) {
@@ -35,6 +36,7 @@ export function renderIntro(root, { go }) {
     const nickname = form.nickname.value.trim();
     if (!nickname) return;
     // 비속어 등 서버 검사는 프롤로그 끝의 /api/start 에서 한다 (거절되면 그 자리에서 다시 받는다)
+    clearScenes(); // 새 게임: 지난 판의 장면 기록(반전 여부 등)을 지운다
     savePrologue({ scene: 'library', nickname, printed: [] });
     go('prologue');
   });

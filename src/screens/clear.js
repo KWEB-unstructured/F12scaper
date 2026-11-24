@@ -1,5 +1,6 @@
 // 담당: 정씨 · 클리어 화면 (최종 기록, 단계별 소요 시간, 사용한 개발자 도구 기능 카드, 공유)
 import { loadProgress, resetProgress } from '../core/state.js';
+import { clearScenes } from './scenes-state.js';
 import { totalHintsUsed } from '../core/game.js';
 import { formatDuration } from '../core/format.js';
 import { STAGES } from '../stages/index.js';
@@ -46,6 +47,7 @@ export function renderClear(root, { go }) {
   $('[data-ranking]').addEventListener('click', () => go('ranking'));
   $('[data-reset]').addEventListener('click', () => {
     resetProgress();
+    clearScenes();
     go('start');
   });
 }

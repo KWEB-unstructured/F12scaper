@@ -15,10 +15,10 @@ export default {
   title: '개발자의 흔적',
   tool: 'Elements — HTML 주석',          // 클리어 카드 제목
   toolUsage: '실무에서는 ...',             // 클리어 카드 설명 한 줄
-  guide: ['...', { speaker: 'unknown', text: '...' }], // 단계 시작 대사. 문자열이면 브라우저가 말한다
+  guide: ['...', { speaker: 'developer', text: '...' }], // 단계 시작 대사. 문자열이면 주인공 독백
   answerHash: '<npm run hash -- "정답">',  // 8단계는 null
   input: true,                             // false 면 입력창 숨김 (3단계)
-  verify: 'local',                         // 'server' 면 /api/verify (8단계)
+  verify: 'local',                         // 'terminate' 면 입력창 없이 콘솔 fetch('/system/terminate') (8단계)
   hints: ['방향', '탭과 위치', '거의 정답'],
   taunts: ['오답일 때 보안 시스템 경고'],   // 선택
   mount(el, ctx) {
@@ -33,17 +33,19 @@ export default {
 |---|---|
 | `ctx.complete(fragment)` | 입력창 없이 통과시킬 때 (3단계의 `unlock`) |
 | `ctx.verify(input)` | `Promise<boolean>`. input 이 이 단계 answerHash 와 맞는지 |
-| `ctx.say(line)` | 대사 한 줄 추가. 문자열이면 브라우저, `{ speaker, text }` 면 그 화자 |
-| `ctx.taunt(text)` | 보안 시스템 경고 표시 |
+| `ctx.say(line)` | 대사 한 줄 추가. 문자열이면 주인공 독백, `{ speaker, text }` 면 그 화자 |
+| `ctx.taunt(text)` | 크롤러 경고 표시 |
 | `ctx.fragments` | 지금까지 얻은 조각 `{1: 'xxx', ...}` (읽기 전용) |
 
 규칙
 - 입력창으로 맞히면 입력값(normalize 후)이 그 단계의 **조각**이 된다. `ctx.complete(fragment)` 로 통과하면 넘긴 값이 조각.
 - 정답 비교는 `normalize` = 앞뒤 공백 제거 + 소문자. 해시 = `SHA-256("f12escape:" + normalize(정답))`.
 - 단계 화면은 단계마다 새로 그려진다. 단계가 바뀌면 mount 가 돌려준 정리 함수가 불린다.
-- **화자 이름을 대사 문자열에 적지 않는다** (`'브라우저: ...'` ✗). 화자는 `speaker` 키로 고르고, 이름·진행률 라벨은 [src/content/characters.js](../src/content/characters.js) 에서만 바꾼다.
-  - 화자 키: `narration`(내레이션) · `browser`(안내자, 기본값) · `security`(보안 시스템) · `unknown`(정체 미상)
-- 오답 경고는 화면이 `"비인가 접근 감지 (n회)"` 제목을 붙여 보안 시스템 이름으로 띄운다. `taunts` 에는 본문만 쓴다.
+- **화자 이름을 대사 문자열에 적지 않는다** (`'개발자: ...'` ✗). 화자는 `speaker` 키로 고르고, 이름·진행 라벨은 [src/content/characters.js](../src/content/characters.js) 에서만 바꾼다.
+  - 화자 키 (2026-11-24 결정 2): `narration`(주인공 독백·내레이션, 기본값 — 시작 대사·힌트) · `developer`(개발자 메시지, 퍼즐·장면 안에서만) · `crawler`(크롤러, 오답 경고)
+  - 4단계 반전 장면을 보기 전에는 정체를 숨긴 이름을 보여 준다: 개발자 "???", 크롤러 "알 수 없는 프로세스"
+- 오답 경고는 화면이 `"비인가 접근 감지 (n회)"` 제목을 붙여 크롤러 이름으로 띄운다. `taunts` 에는 본문만 쓴다.
+- 진행 표시는 "인증 키 조각 n/7" (1~7단계에서 하나씩, 8단계는 조합).
 
 ## 2. 진행 저장 (localStorage `f12escape:progress`)
 

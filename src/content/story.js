@@ -32,7 +32,7 @@ export const LOGIN = {
 };
 
 /** 정답 입력창 앞 프롬프트 */
-export const PROMPT = 'guest@the-archive:~$';
+export const PROMPT = 'ghost@the-archive:~$'; // 브라우저가 주인공을 정체불명의 객체(유령)로 인식한다
 
 /** 단계 화면의 사이트 주소. 단계 번호로 만든다 (퍼즐 내용이 드러나지 않게 중립적인 이름) */
 export const stageUrl = (id) => `http://the-archive.invalid/room/${id}`;
@@ -45,10 +45,10 @@ export const STAGE_CLEAR = {
 
 /** 단계 화면 버튼·확인 창 문구 */
 export const GAME_UI = {
-  askBrowser: '브라우저에게 묻기',
+  askBrowser: '힌트 보기',
   askMeta: (used, total, nextMin) => (used >= total ? `${used}/${total}` : `${used}/${total} · +${nextMin}분`),
   hintTitle: (n) => `힌트 ${n}을 열까요?`,
-  hintBody: (min) => `브라우저가 힌트를 알려 주지만, 기록에 ${min}분이 더해집니다.`,
+  hintBody: (min) => `힌트를 열면 기록에 ${min}분이 더해집니다.`,
   hintOk: '힌트 열기',
   menu: '메뉴',
   reset: '처음부터 다시',
@@ -63,11 +63,11 @@ export const GAME_UI = {
 /** 클리어 화면 제목. TODO(형씨): 결말 미정 — 결말이 정해지면 바꾼다 */
 export const CLEAR_TITLE = '탈출 성공';
 
-/** 단계에 taunts 가 없을 때 쓰는 보안 시스템 기본 경고 */
+/** 단계에 taunts 가 없을 때 쓰는 크롤러 기본 경고 */
 export const DEFAULT_TAUNTS = ['허가되지 않은 입력입니다. 이 접근은 기록됩니다.', '화면에 보이는 것만으로는 통과할 수 없습니다.'];
 
-/** 같은 단계에서 여러 번 틀렸을 때 브라우저가 힌트를 권한다 */
-export const HINT_SUGGEST = '많이 막혔지? 힌트 버튼을 눌러 봐. (시간 감점이 있긴 해)';
+/** 같은 단계에서 여러 번 틀렸을 때 주인공이 힌트를 떠올린다 (독백). TODO(형씨): 문구 다듬기 */
+export const HINT_SUGGEST = '너무 오래 붙잡고 있었나… 힌트를 볼까? (기록에 시간이 더해지긴 하지만)';
 
 /** 8단계 서버 검증 실패 */
 export const SERVER_DOWN = '서버가 응답하지 않습니다. 잠시 후 다시 입력하세요.';

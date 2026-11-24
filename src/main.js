@@ -8,6 +8,7 @@ import { renderMobile, isMobileDevice } from './screens/mobile.js';
 import { renderIntro } from './screens/intro.js';
 import { renderPrologue } from './screens/prologue.js';
 import { loadPrologue, savePrologue, clearPrologue, SCENES } from './screens/prologue-state.js';
+import { clearScenes } from './screens/scenes-state.js';
 import { renderStage } from './screens/stage.js';
 import { renderClear } from './screens/clear.js';
 import { renderRanking } from './screens/ranking.js';
@@ -48,6 +49,7 @@ if (import.meta.env.DEV) {
   if (params.has('reset') || scene || params.has('stage')) {
     resetProgress();
     clearPrologue();
+    clearScenes();
     if (SCENES.includes(scene)) savePrologue({ scene, nickname: '개발자', printed: [] });
     if (Number.isInteger(stage) && stage >= 1 && stage <= TOTAL_STAGES) {
       // 진행 저장 형식은 core/state.js 가 정한다. 만든 뒤 단계 번호만 바꾼다.
