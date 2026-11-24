@@ -37,6 +37,12 @@ export const PROMPT = 'guest@the-archive:~$';
 /** 단계 화면의 사이트 주소. 단계 번호로 만든다 (퍼즐 내용이 드러나지 않게 중립적인 이름) */
 export const stageUrl = (id) => `http://the-archive.invalid/room/${id}`;
 
+/** 단계 통과 연출 문구. TODO(형씨): 8단계 문구는 결말이 정해지면 다시 보기 */
+export const STAGE_CLEAR = {
+  title: 'ACCESS GRANTED',
+  finalTitle: 'ESCAPE COMPLETE',
+};
+
 /** 단계 화면 버튼·확인 창 문구 */
 export const GAME_UI = {
   askBrowser: '브라우저에게 묻기',

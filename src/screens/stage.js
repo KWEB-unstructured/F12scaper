@@ -28,7 +28,7 @@ import {
 import { loadProgress, resetProgress } from '../core/state.js';
 import { verifyFinal } from '../core/api.js';
 import { formatDuration } from '../core/format.js';
-import { DEFAULT_TAUNTS, HINT_SUGGEST, PROMPT, SERVER_DOWN, TOO_MANY_ATTEMPTS, GAME_UI, stageUrl } from '../content/story.js';
+import { DEFAULT_TAUNTS, HINT_SUGGEST, PROMPT, SERVER_DOWN, TOO_MANY_ATTEMPTS, GAME_UI, STAGE_CLEAR, stageUrl } from '../content/story.js';
 import { SPEAKERS, DEFAULT_SPEAKER, PROGRESS_LABEL, wrongAlertTitle } from '../content/characters.js';
 import { createDialogue } from '../ui/dialogue.js';
 import { confirmModal } from '../ui/modal.js';
@@ -126,6 +126,14 @@ export function renderStage(root, { go }) {
 
       <div class="alert-edge" data-edge aria-hidden="true"></div>
       <div class="game-toast taunt" data-taunt role="alert" hidden></div>
+      <div class="clear-fx" data-clear role="status" hidden>
+        <p class="clear-title" data-clear-title></p>
+        <div class="clear-progress">
+          <span data-clear-label></span>
+          <span class="clear-meter" aria-hidden="true"><span data-clear-fill></span></span>
+          <strong data-clear-pct></strong>
+        </div>
+      </div>
     </section>`;
 
   const $ = (sel) => root.querySelector(sel);
@@ -250,12 +258,82 @@ export function renderStage(root, { go }) {
   tick();
   const interval = setInterval(tick, 1000);
 
+  // ── 단계 통과: 저장은 바로 하고, 연출(약 1.8초)이 끝나면 다음 단계로 ──
+  // 화면 네 변 초록빛 → 가운데 ACCESS GRANTED 두 번 깜박 → 탈출 진행률 막대가 차오름.
+  // 클릭·Enter·Space·Esc 로 넘길 수 있다. 입력창으로 맞히든 콘솔 unlock() 으로 통과하든 같은 연출.
   let solved = false;
+  let clearTimers = [];
+  let clearFrame = 0;
+  let removeClearKeys = null;
+  const CLEAR_MS = 1800;
+  const COUNT_START_MS = 800;
+  const COUNT_MS = 700;
+
+  const playClear = (from, to, final) =>
+    new Promise((resolve) => {
+      form.classList.add('granted');
+      form.answer.disabled = true;
+      hintBtn.disabled = true;
+      $('[data-taunt]').hidden = true;
+
+      const fx = $('[data-clear]');
+      $('[data-clear-title]').textContent = final ? STAGE_CLEAR.finalTitle : STAGE_CLEAR.title;
+      $('[data-clear-label]').textContent = PROGRESS_LABEL;
+      const fill = $('[data-clear-fill]');
+      const pct = $('[data-clear-pct]');
+      fill.style.width = `${from}%`;
+      pct.textContent = `${from}% → ${to}%`;
+      fx.hidden = false;
+      $('[data-edge]').classList.remove('is-on');
+      $('[data-edge]').classList.add('is-grant');
+
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearTimers.forEach(clearTimeout);
+        cancelAnimationFrame(clearFrame);
+        removeClearKeys?.();
+        resolve();
+      };
+      // 진행률 막대와 숫자를 from → to 로 채운다
+      clearTimers.push(
+        setTimeout(() => {
+          fill.style.width = `${to}%`;
+          const t0 = performance.now();
+          const step = (now) => {
+            const k = Math.min(1, (now - t0) / COUNT_MS);
+            pct.textContent = `${Math.round(from + (to - from) * k)}%`;
+            if (k < 1) clearFrame = requestAnimationFrame(step);
+          };
+          clearFrame = requestAnimationFrame(step);
+        }, COUNT_START_MS),
+      );
+      clearTimers.push(setTimeout(finish, CLEAR_MS));
+
+      // 넘기기: 정답을 낸 Enter 가 바로 넘기지 않도록 잠깐 뒤부터 받는다
+      clearTimers.push(
+        setTimeout(() => {
+          const onKey = (e) => {
+            if (!e.repeat && ['Enter', ' ', 'Escape'].includes(e.key)) finish();
+          };
+          fx.addEventListener('click', finish);
+          document.addEventListener('keydown', onKey);
+          removeClearKeys = () => {
+            fx.removeEventListener('click', finish);
+            document.removeEventListener('keydown', onKey);
+          };
+        }, 250),
+      );
+    });
+
   const solve = (fragment) => {
     if (solved) return;
     solved = true;
+    const from = recoveryPercent(p);
     completeStage(p, fragment);
-    go('stage');
+    const final = isFinished(p);
+    playClear(from, final ? 100 : recoveryPercent(p), final).then(() => go('stage'));
   };
 
   const form = $('[data-form]');
@@ -366,6 +444,9 @@ export function renderStage(root, { go }) {
   return () => {
     clearInterval(interval);
     clearTimeout(toastTimer);
+    clearTimers.forEach(clearTimeout);
+    cancelAnimationFrame(clearFrame);
+    removeClearKeys?.();
     document.removeEventListener('click', onDocClick);
     dialogue.destroy();
     stageCleanup?.();
