@@ -40,6 +40,22 @@ export function clearScenes() {
   }
 }
 
+/** 장면을 틀기 시작할 때: 남은 장면에 넣는다 (끝나기 전에 새로고침하면 이 장면부터 다시 튼다) */
+export function beginScene(id) {
+  const s = loadScenes();
+  if (s.pending.includes(id)) return;
+  s.pending.push(id);
+  saveScenes(s);
+}
+
+/** 장면이 끝났을 때(건너뛴 경우 포함): 남은 장면에서 빼고 본 장면에 넣는다 */
+export function endScene(id) {
+  const s = loadScenes();
+  s.pending = s.pending.filter((x) => x !== id);
+  if (!s.seen.includes(id)) s.seen.push(id);
+  saveScenes(s);
+}
+
 /** 4단계 반전 장면을 봤다고 기록한다 */
 export function markRevealed() {
   const s = loadScenes();

@@ -36,6 +36,7 @@ export default {
 | `ctx.say(line)` | 대사 한 줄 추가. 문자열이면 주인공 독백, `{ speaker, text }` 면 그 화자 |
 | `ctx.taunt(text)` | 크롤러 경고 표시 |
 | `ctx.fragments` | 지금까지 얻은 조각 `{1: 'xxx', ...}` (읽기 전용) |
+| `ctx.playScene(id)` | `Promise<void>`. 이야기 장면(2-2절)을 화면 전체에 덮어 튼다. 이미 본 장면이면 바로 풀린다 (4단계 반전 `'reveal'`) |
 
 규칙
 - 입력창으로 맞히면 입력값(normalize 후)이 그 단계의 **조각**이 된다. `ctx.complete(fragment)` 로 통과하면 넘긴 값이 조각.
@@ -77,7 +78,41 @@ export default {
 - **기록은 1단계부터 잰다.** 프롤로그 시간은 기록에 들어가지 않는다.
 - 이름이 `/api/start` 에서 거절(400)되면 프롤로그 마지막 화면에서 다시 받는다.
 - 시작할 때 `f12escape:progress` 가 있으면 단계 화면, 없고 `f12escape:prologue` 가 있으면 프롤로그를 이어 간다.
-- 개발용: 개발 서버에서만 `?reset`(둘 다 지움), `?scene=archive`(그 장면부터), `?stage=6`(그 단계부터, 서버 없이 개발용 진행 생성). 배포판에서는 무시한다.
+- 개발용: 개발 서버에서만 `?reset`(모두 지움), `?scene=archive`(그 장면부터), `?stage=6`(그 단계부터, 서버 없이 개발용 진행 생성), `?interlude=after-3`(그 이야기 장면부터, 끝나면 이어지는 단계로). 배포판에서는 무시한다.
+
+### 2-2. 이야기 장면 (데이터 [src/content/interludes.js](../src/content/interludes.js) · 저장 localStorage `f12escape:scenes`)
+
+2026-11-24 결정 3. 단계 사이·4단계 반전·결말에 화면 전체를 덮어 트는 장면. 재생은 [src/ui/interlude.js](../src/ui/interlude.js), 언제 트는지는 [src/screens/stage.js](../src/screens/stage.js) (정씨).
+
+장면 id
+| id | 언제 |
+|---|---|
+| `after-N` | N단계 통과 연출 직후, N+1단계로 넘어가기 전 (`afterStage(N)`). 데이터에 없으면 건너뛴다 |
+| `reveal` | 4단계에서 쿠키를 admin 으로 바꾸고 새로고침한 순간. `stage4.js` 가 `ctx.playScene('reveal')` |
+| `ending` | 8단계 탈출 뒤 결말 (8단계·결말 작업 때 연결) |
+
+장면 = 조각(beat) 배열. 조각 하나:
+```js
+{
+  lines: [{ speaker: 'developer', text: '...' }],   // 대사창 (없어도 됨)
+  log: { title: 'crawler.log', lines: [{ at: '2016-11-24 23:59', text: '...', speaker: 'crawler', delay: 700 }] }, // 로그 재생
+  screen: { url: 'http://...', title: '...', body: ['...'] },   // 모형 화면 (log 와 둘 중 하나)
+  reveal: true,   // 이 조각부터 개발자·크롤러 진짜 이름
+}
+```
+- 로그가 다 찍히면 대사가 이어진다. 대사 없는 모형 화면·로그는 클릭을 기다린다.
+- "장면 건너뛰기"·Esc 로 언제든 장면 전체를 건너뛴다 (처음 보는 장면도). 다시 보기는 없다.
+
+저장 [src/screens/scenes-state.js](../src/screens/scenes-state.js) — 진행 저장(`f12escape:progress`)과 분리된 키
+```js
+{
+  seen: ['after-1', 'reveal'],  // 본 장면 (건너뛴 장면 포함). 다시 틀지 않는다
+  pending: ['after-2'],         // 틀기 시작했는데 아직 안 끝난 장면. 새로고침하면 단계 화면이 처음부터 다시 튼다
+  revealed: true,               // 4단계 반전을 봤는지 → 화자 진짜 이름 (5단계 이상이면 장면을 안 봤어도 true 취급)
+}
+```
+- "처음부터 다시"·새 게임·개발용 주소에서 이 키도 지운다.
+- 장면을 보는 시간은 기록(서버 시작 시각 기준)에 들어간다. 단계별 시간에는 넣지 않으려고, 단계 통과 뒤 장면이 끝나면 다음 단계의 `stageEnteredAt` 을 다시 잡는다.
 
 ## 3. API
 

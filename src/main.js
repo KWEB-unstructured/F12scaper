@@ -1,6 +1,7 @@
 import './styles/base.css';
 import './styles/stages.css';
 import './styles/prologue.css';
+import './styles/interlude.css';
 import { loadProgress, resetProgress, createProgress, saveProgress } from './core/state.js';
 import { isFinished, TOTAL_STAGES } from './core/game.js';
 import { renderStart } from './screens/start.js';
@@ -8,7 +9,7 @@ import { renderMobile, isMobileDevice } from './screens/mobile.js';
 import { renderIntro } from './screens/intro.js';
 import { renderPrologue } from './screens/prologue.js';
 import { loadPrologue, savePrologue, clearPrologue, SCENES } from './screens/prologue-state.js';
-import { clearScenes } from './screens/scenes-state.js';
+import { clearScenes, saveScenes } from './screens/scenes-state.js';
 import { renderStage } from './screens/stage.js';
 import { renderClear } from './screens/clear.js';
 import { renderRanking } from './screens/ranking.js';
@@ -42,11 +43,15 @@ function go(name) {
 //   ?scene=archive  그 프롤로그 장면부터 (library | monitor | archive | glitch | trapped)
 // 게임 안의 "처음부터 다시"(resetProgress)와는 별개다.
 //   ?stage=6        그 단계부터 바로 (서버 없이 개발용 진행을 만든다. 앞 단계 조각은 비어 있다)
+//   ?interlude=after-3  그 이야기 장면부터 (content/interludes.js 의 id). 장면이 끝나면 이어지는 단계로
+//                   (after-N → N+1단계, reveal → 4단계, 그 밖은 1단계. ?stage= 를 같이 주면 그 단계)
 if (import.meta.env.DEV) {
   const params = new URLSearchParams(location.search);
   const scene = params.get('scene');
-  const stage = Number(params.get('stage'));
-  if (params.has('reset') || scene || params.has('stage')) {
+  const interlude = params.get('interlude');
+  const after = /^after-(\d)$/.exec(interlude ?? '');
+  const stage = Number(params.get('stage')) || (after ? Number(after[1]) + 1 : interlude === 'reveal' ? 4 : interlude ? 1 : 0);
+  if (params.has('reset') || scene || params.has('stage') || interlude) {
     resetProgress();
     clearPrologue();
     clearScenes();
@@ -58,6 +63,7 @@ if (import.meta.env.DEV) {
       p.stage = stage;
       saveProgress(p);
     }
+    if (interlude) saveScenes({ seen: [], pending: [interlude], revealed: false });
     history.replaceState(null, '', location.pathname);
   }
 }

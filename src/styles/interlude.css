@@ -1,0 +1,196 @@
+/* 담당: 정씨 · 이야기 장면 (ui/interlude.js · ui/log-replay.js · ui/mock-screen.js)
+   화면 전체를 어두운 막으로 덮고, 가운데에 로그 상자 또는 모형 창 → 아래에 대사창.
+   단계 화면의 통과 연출(.clear-fx)보다 위, 확인 창(modal)보다 아래에 둔다. */
+
+.il {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  place-items: center;
+  padding: var(--space-7) var(--gutter) 13em;
+  background: rgb(5 7 10 / 0.94);
+  animation: il-in 0.4s ease-out;
+}
+.il.is-leaving {
+  opacity: 0;
+  transition: opacity 0.35s ease-in;
+}
+@keyframes il-in {
+  from {
+    opacity: 0;
+  }
+}
+.il-stage {
+  width: min(760px, 100%);
+}
+.il-stage:empty {
+  display: none;
+}
+
+/* 대사창: 단계 화면과 같은 모양, 화면 아래쪽. 대사창 자체의 스킵 버튼 대신 장면 건너뛰기 버튼 하나만 둔다 */
+.il .dlg {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-6);
+  width: min(880px, calc(100% - 32px));
+  transform: translateX(-50%);
+}
+.il .dlg-skip {
+  display: none;
+}
+.il-skip {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.il-skip:hover,
+.il-skip:focus-visible {
+  color: var(--fg);
+  border-color: var(--muted);
+}
+/* 대사 없는 모형 화면에서 클릭을 기다릴 때 */
+.il-continue {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--space-7);
+  margin: 0;
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--accent);
+  animation: blink 1s steps(1) infinite;
+}
+
+/* ── 로그 재생: 터미널 상자에 한 줄씩 ── */
+.il-log {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #05080c;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
+  cursor: pointer;
+}
+.il-log.is-done {
+  cursor: default;
+}
+.il-log-head {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.il-log-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 45vh;
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  overflow-y: auto;
+  list-style: none;
+}
+/* 화자 없는 줄은 흐린 회색, 화자 있는 줄은 그 화자 색 (크롤러 빨강 · 개발자 파랑) → 중요한 줄이 눈에 띈다 */
+.il-log-lines li {
+  color: var(--speaker, var(--muted));
+  animation: il-line 0.3s steps(3) both;
+}
+.il-log-lines time {
+  margin-right: var(--space-3);
+  color: var(--muted);
+  opacity: 0.7;
+}
+/* 아직 찍히는 중이면 마지막 줄 뒤에 커서 */
+.il-log:not(.is-done) .il-log-lines li:last-child::after {
+  content: '▌';
+  margin-left: var(--space-1);
+  color: var(--ok);
+  animation: blink 0.9s steps(1) infinite;
+}
+@keyframes il-line {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}
+
+/* ── 모형 화면: 가짜 창 하나 ── */
+.il-window {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
+  animation: il-window-in 0.35s ease-out;
+}
+.il-window-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.il-window-dots {
+  display: flex;
+  gap: 6px;
+}
+.il-window-dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.il-window-url {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.il-window-body {
+  padding: var(--space-5);
+}
+.il-window-body h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-lg);
+  color: var(--accent);
+  letter-spacing: 0.08em;
+}
+.il-window-body p {
+  margin: var(--space-1) 0;
+}
+@keyframes il-window-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+@media (max-width: 560px) {
+  .il {
+    padding-bottom: 15em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .il,
+  .il-log-lines li,
+  .il-window,
+  .il-continue,
+  .il-log:not(.is-done) .il-log-lines li:last-child::after {
+    animation: none;
+  }
+  .il.is-leaving {
+    transition: none;
+  }
+}

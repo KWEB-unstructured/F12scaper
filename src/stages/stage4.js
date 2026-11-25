@@ -45,8 +45,12 @@ export default {
     if (readRole() === 'admin') {
       el.innerHTML = `<p class="puzzle-text">관리자 인증 완료.</p><p class="puzzle-text">접근 코드: <code data-code></code></p>`;
       el.querySelector('[data-code]').textContent = revealFragment();
-      ctx.say('오, 관리자 등급이 됐네! 화면에 나온 코드를 입력해 봐.');
-      ctx.taunt('이용자 등급 변조가 감지되었습니다. 이 사실은 기록됩니다.');
+      // 4단계 반전 (2026-11-24 결정 3-2): 크롤러 관리 프로그램 화면 + 10년 전 로그. 장면은 content/interludes.js 의 'reveal'.
+      // 이미 본 장면이면 바로 넘어간다. TODO(형씨): 장면 뒤 대사 다듬기 (반전 뒤라 크롤러 이름이 드러난다)
+      ctx.playScene('reveal').then(() => {
+        ctx.say('관리자 등급이 됐어. 화면에 나온 코드를 입력해 보자.');
+        ctx.taunt('이용자 등급 변조가 감지되었습니다. 이 사실은 기록됩니다.');
+      });
     } else {
       el.innerHTML = `<p class="puzzle-text">권한이 없습니다.</p>`;
     }

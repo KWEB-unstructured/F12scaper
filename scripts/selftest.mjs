@@ -93,7 +93,7 @@ await test('4단계: 인코딩된 조각 → answerHash 일치', async () => {
   const stage4 = (await import('../src/stages/stage4.js')).default;
   const host = { innerHTML: '', querySelector: () => ({ set textContent(v) { host.code = v; } }) };
   globalThis.document = { cookie: 'role=admin' };
-  stage4.mount(host, { say() {}, taunt() {} });
+  stage4.mount(host, { say() {}, taunt() {}, playScene: async () => {} }); // playScene: 반전 장면은 바로 끝난 것으로
   assert.equal(await hashAnswer(host.code), stage4.answerHash);
 });
 
