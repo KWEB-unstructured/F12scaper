@@ -1,12 +1,14 @@
 // 프롤로그 콘솔 메시지. 출력은 src/ui/console-log.js 가 한다.
-// 담당: 형씨(문구)
-// TODO(형씨): SYSTEM 이 보안 시스템인지 납치범 쪽인지 미정 → 화자 이름 대신 메시지 단위로 둔다.
+// 담당: 형씨(문구) · TODO(형씨): 문구 다듬기
+//
+// 2026-11-24 새 스토리 반영
+// - 개발자는 HTML 에 스크립트를 숨겨 두었고, 그 스크립트가 남긴 로그가 콘솔에 찍힌다.
+//   크롤러는 원본 HTML 텍스트만 읽어서 JS 실행 결과(콘솔)는 보지 못한다 → 콘솔은 개발자가 말을 걸 수 있는 곳.
+// - 전반부라 개발자는 정체를 숨긴다("???"). 이름 표시는 characters.js 와 맞춘다.
 
 /** %c 스타일 (메시지의 style 키) */
 export const CONSOLE_STYLES = {
-  system: 'color:#f5a524; font-weight:bold',
-  unknownSystem: 'color:#ff6b6b; font-weight:bold',
-  unknownUser: 'color:#7cc4ff',
+  developer: 'color:#1558b0; font-weight:bold', // 짙은 파랑 (옅은 하늘색은 밝은 콘솔에서 잘 안 보였다)
   crawler: 'color:#7d8b9c',
 };
 
@@ -20,33 +22,26 @@ export const CONSOLE_STYLES = {
 
 /** @type {Record<string, ConsoleMessage>} */
 export const CONSOLE_MESSAGES = {
-  /** 1. glitch 때 미리 출력 (콘솔은 열기 전 로그도 보여 준다) */
-  waiting: { style: 'system', tag: '[ SYSTEM ]', lines: ['예상한 시간보다 조금 늦었네요.', '이제 대화할 준비가 되었습니까?'] },
-  /** 2. F12 감지 직후 */
-  detected: {
-    style: 'unknownSystem',
-    title: 'UNKNOWN SYSTEM',
+  /** 1. F12 를 누른 순간(glitch) 출력. 개발자가 10년 전에 써 둔 말 */
+  waiting: { style: 'developer', tag: '[ ??? ]', lines: ['예상한 시간보다 조금 늦었네요.', '이제 대화할 준비가 되었습니까?'] },
+  /** 2. 갇힌 직후. 화면 뒤의 크롤러가 새 접속자를 기록한다 (회색 로그, 정체는 아직 모름) */
+  detected: { style: 'crawler', tag: '[crawler]', lines: ['new visitor · type: UNKNOWN · status: TRAPPED'] },
+  /** 3. 개발자의 첫인사 */
+  hello: { style: 'developer', tag: '[ ??? ]', lines: ['저기요. 이 메시지가 보이나요?', '보인다면… 10년을 기다린 보람이 있군요.'] },
+  /** 3-1. 경고 + 1단계(Elements · HTML 주석)로 잇는 연결 대사. 바로 위 회색 기록으로 "그들"을 처음 가리킨다 */
+  bridge: {
+    style: 'developer',
+    tag: '[ ??? ]',
     lines: [
-      '새로운 접속자를 확인했습니다',
-      'USER : UNKNOWN',
-      'STATUS : TRAPPED',
-      'WARNING: 이 웹사이트에서 나가려고 하지 마십시오.',
-      '그들은 당신이 접속한 것을 알고 있습니다.',
+      '방금 그 회색 기록 보셨죠? 그들이 당신을 알아챘어요. 여기서는 길게 말할 수 없습니다.',
+      '첫 번째 메모는 이 페이지 속에 숨겨 뒀습니다. Elements 탭에서 페이지를 들여다보세요.',
     ],
   },
-  /** 3. 2번 뒤 시간 차 */
-  hello: { style: 'unknownUser', tag: '[UNKNOWN USER]', lines: ['저기요.', '혹시... 제 메시지가 보이나요?'] },
-  /** 3-1. 1단계(Elements · HTML 주석)로 잇는 연결 대사 (제안) */
-  bridge: {
-    style: 'unknownUser',
-    tag: '[UNKNOWN USER]',
-    lines: ['콘솔만 보면 안 돼요. 그들이 여기를 지켜보고 있어요.', '메모는 화면 안에 숨겨 뒀어요. Elements 탭에서… 페이지 속을 들여다봐요.'],
-  },
-  /** 4. 거미의 복선. Archive 메뉴를 열었을 때 */
+  /** 4. 크롤러의 복선. 블로그의 Archive 메뉴를 열었을 때 */
   crawler: { style: 'crawler', tag: '[crawler]', lines: ['visited: /archive'] },
 };
 
-/** F12 감지 후 출력 순서와 간격 (ms, 앞 메시지 기준) */
+/** 갇힌 뒤 출력 순서와 간격 (ms, 앞 메시지 기준) */
 export const AFTER_F12 = [
   { key: 'detected', delay: 700 },
   { key: 'hello', delay: 2200 },
