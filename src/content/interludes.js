@@ -28,6 +28,8 @@
  * @property {{ title?: string, lines: LogLine[] }} [log]   로그 재생 (다 찍힌 뒤 대사가 이어진다)
  * @property {{ url?: string, title: string, body: string[] }} [screen]   모형 화면 (가짜 창)
  * @property {boolean} [reveal]  이 조각부터 개발자·크롤러의 진짜 이름을 보여 준다 (4단계 반전)
+ * @property {'shutdown'} [fx]   'shutdown': 조각을 시작하기 전에 앞 조각 화면이 꺼지는 연출 (서버 종료). 그 뒤 바탕은 검정
+ * @property {'library' | 'black'} [backdrop]  막 뒤 배경. 'library' 는 프롤로그 도서관 사진 (결말에서 깨어날 때). 다음 조각에도 이어진다
  */
 
 const n = (text) => ({ speaker: 'narration', text });
@@ -94,6 +96,29 @@ export const INTERLUDES = {
       lines: [dev('조각이 다 모였습니다.'), dev('마지막 문은 제가 열 수 없어요. 저는 HTML 밖에 쓸 수 없으니까요.'), n('…그럼 내가 직접 열어야 한다는 거구나.')],
     },
   ],
-  // TODO(8단계·결말 작업): 서버가 꺼짐 → 도서관 의자에서 깨어남 → 모니터에 접속할 수 없는 페이지
-  ending: [{ lines: [n('…')] }],
+  // 8단계 탈출 뒤 결말 (클리어 화면 직전, screens/clear.js 가 튼다): 서버가 꺼짐 → 도서관 의자에서 깨어남 → 모니터에 접속할 수 없는 페이지
+  ending: [
+    {
+      log: {
+        title: 'console',
+        lines: [
+          { text: '종료 키 확인' },
+          { text: '아카이브 서버를 종료합니다' },
+          { text: '[crawler] 종료 거부 · 종료 거부 · 종', speaker: 'crawler', delay: 500 },
+          { text: '연결된 세션 2개 해제', speaker: 'developer', delay: 1000 },
+        ],
+      },
+      lines: [dev('고마워요. 10년 만이네요, 문이 열린 건.'), dev('이제 둘 다 나갈 수 있어요. 안녕히 가세요.')],
+    },
+    { fx: 'shutdown', lines: [n('…')] },
+    { backdrop: 'library', lines: [n('…어?'), n('도서관이다. 의자에 앉은 채로 잠들었었나.')] },
+    {
+      screen: {
+        url: 'http://the-archive.invalid/',
+        title: '사이트에 연결할 수 없음',
+        body: ['the-archive.invalid 의 서버 IP 주소를 찾을 수 없습니다.', 'ERR_NAME_NOT_RESOLVED'],
+      },
+      lines: [n('모니터에는 접속할 수 없는 페이지만 떠 있다.'), n('…꿈은 아니었던 것 같아.')],
+    },
+  ],
 };

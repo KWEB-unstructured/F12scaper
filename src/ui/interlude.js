@@ -1,6 +1,7 @@
 // 담당: 정씨 · 이야기 장면 재생기 (2026-11-24 결정 3)
 // 장면 = 조각(beat) 배열 (content/interludes.js). 화면 전체를 덮는 어두운 막 위에서 조각을 차례로 재생한다.
 //   조각마다: 로그 재생(ui/log-replay.js) 또는 모형 화면(ui/mock-screen.js)을 가운데에 → 대사창(ui/dialogue.js)
+//   fx:'shutdown' 이면 앞 조각 화면이 꺼지는 연출부터, backdrop 이면 막 뒤 배경을 바꾼다 (결말의 도서관)
 // - "장면 건너뛰기" 버튼·Esc 로 언제든 장면 전체를 건너뛴다 (처음 보는 장면도)
 // - 저장(본 장면·남은 장면)은 여기서 하지 않는다. 부르는 쪽(screens/stage.js)이 scenes-state.js 로 한다
 import { createDialogue } from './dialogue.js';
@@ -8,6 +9,8 @@ import { playLog } from './log-replay.js';
 import { renderMockScreen } from './mock-screen.js';
 
 const LEAVE_MS = 350;
+/** 서버가 꺼지는 연출 (화면이 가로줄로 접혔다 사라짐) 길이. interlude.css 의 il-crt-off 와 맞춘다 */
+const SHUTDOWN_MS = 1100;
 
 /**
  * @param {HTMLElement} parent 막을 붙일 곳 (단계 화면)
@@ -69,10 +72,26 @@ export function playInterlude(parent, beats, { nameOf, onReveal } = {}) {
       stopBeat = end;
     });
 
+  /** 앞 조각 화면이 가로줄로 접히며 꺼진다. 건너뛰면 바로 끝난다 */
+  const shutdown = () =>
+    new Promise((resolve) => {
+      el.classList.add('is-off');
+      const timer = setTimeout(end, SHUTDOWN_MS);
+      function end() {
+        clearTimeout(timer);
+        el.classList.remove('is-off');
+        resolve();
+      }
+      stopBeat = end;
+    });
+
   const run = async () => {
     for (const beat of beats) {
       if (skipped || destroyed) break;
       if (beat.reveal) onReveal?.();
+      if (beat.fx === 'shutdown') await shutdown();
+      if (skipped || destroyed) break;
+      el.dataset.backdrop = beat.backdrop ?? (beat.fx === 'shutdown' ? 'black' : el.dataset.backdrop ?? '');
       stage.replaceChildren();
       if (beat.screen) stage.append(renderMockScreen(beat.screen));
       if (beat.log) {
