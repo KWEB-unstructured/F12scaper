@@ -93,34 +93,46 @@ export default {
 
 ### GET /api/stage5
 5단계 퍼즐용. **항상 실패 상태 코드**를 보내지만 본문·헤더에 단서를 담는다. 화면(`src/stages/stage5.js`)은 `res.ok` 만 보고 본문을 읽지 않는다.
-- 403: `{ "error": "access_denied", "message", "record", "key_tail": "열쇠 뒷부분", "note" }` + 헤더 `X-Archive-Key: 열쇠 앞부분`
+- 403: `{ "error": "access_denied", "message", "record", "key_tail": "열쇠 뒷부분", "note", "maintenance" }` + 헤더 `X-Archive-Key: 열쇠 앞부분`
+- `maintenance` 에 8단계에서 쓸 주소 `POST /system/terminate` 가 적혀 있다 (뒷문 복선)
 - 정답 = 헤더 값 + `key_tail`. 바꿀 때는 [api/stage5.js](../api/stage5.js) 의 두 상수와 stage5.js 의 `answerHash` 를 같이 바꾼다
 
-### POST /api/verify
-최종 정답 검증 + 기록 계산.
-- 요청: `{ "sessionId": "uuid", "answer": "...", "hints": { "1": 2 }, "stageTimes": { "1": 53000 } }`
-- 200 오답: `{ "ok": false }`
-- 200 정답: `{ "ok": true, "finalTime": 2450000, "rank": 3 }` — finalTime 은 ms, 이상 기록이면 `rank: null`
-- 400: `{ "error": "invalid_body" | "invalid_session" }`
-- 429: `{ "error": "too_many_attempts" }` (세션당 오답 50번을 넘었을 때)
-- 500: `{ "error": "db_error" | "final_answer_not_configured" }` (Production 에 `FINAL_ANSWER` 가 없을 때)
+### POST /system/terminate (= POST /api/verify)
+최종 키 검증 + 기록 계산. 8단계에서 **플레이어가 콘솔로 직접** 보낸다 (2026-11-24 결정 1).
+배포는 [vercel.json](../vercel.json) 의 rewrite, 로컬은 [vite.config.js](../vite.config.js) 플러그인이 [api/verify.js](../api/verify.js) 로 넘긴다. Network 탭 주소는 `/system/terminate` 그대로 보인다. `/api/verify` 로 보내도 같다.
+
+| 구분 | 내용 |
+|---|---|
+| 플레이어가 쓰는 본문 | `{ "key": "..." }` — `fetch('/system/terminate', { method: 'POST', body: JSON.stringify({ key }) })` |
+| 화면이 덧붙이는 필드 | `sessionId`, `hints`, `stageTimes` (형식은 아래 검증 규칙). 정씨의 fetch 감싸기가 8단계 동안만 붙인다 |
+| 정답 필드 이름 | `key`. 넘어가는 동안 `answer` 도 받는다 (`key` 가 있으면 `key` 우선) |
+| Content-Type | 헤더 없이 보내면 브라우저가 `text/plain` 으로 보낸다. 서버는 문자열 본문도 JSON 으로 풀어 읽는다 |
+| 200 정답 | `{ "ok": true, "finalTime": 2450000, "rank": 3, "message": "..." }` — finalTime 은 ms, 랭킹 제외 기록이면 `rank: null` |
+| 200 오답 | `{ "ok": false, "message": "..." }` |
+| 400 | `{ "error": "invalid_body", "message" }` 본문을 못 읽음·`key` 없음·형식 오류 / `{ "error": "invalid_session", "message" }` 세션 정보 없이 보냄·없는 세션 |
+| 429 | `{ "error": "too_many_attempts", "message" }` 세션당 오답 50번을 넘었을 때 |
+| 500 | `{ "error": "db_error" \| "final_answer_not_configured" }` (Production 에 `FINAL_ANSWER` 가 없을 때) |
+| message | 콘솔에서 응답을 열어 본 플레이어가 읽는 이야기 문구. 문구는 형씨, 위치는 [api/_lib/terminate-messages.js](../api/_lib/terminate-messages.js) |
+
 - 서버 계산: `finalTime = (now - sessions.started_at) + penaltyMsFromHints(hints)` ([src/core/rules.js](../src/core/rules.js) 공용)
+- `Content-Type: application/json` 을 붙였는데 본문이 깨진 JSON 이면 Vercel 이 함수까지 오기 전에 400 (본문 없음)을 보낸다. 로컬 플러그인도 똑같이 한다.
 
 검증 규칙
-- 이미 클리어한 세션: 정답을 다시 검사하지 않고 `{ ok: true, finalTime, rank }` 를 돌려준다. finalTime 은 처음 저장된 값 그대로, rank 는 그 기록의 **지금** 순위 (뒤에 더 빠른 사람이 오면 내려간다). 랭킹에서 빠진 기록이면 `rank: null`.
+- 이미 클리어한 세션: 키를 다시 검사하지 않고 `{ ok: true, finalTime, rank, message }` 를 돌려준다. finalTime 은 처음 저장된 값 그대로, rank 는 그 기록의 **지금** 순위 (뒤에 더 빠른 사람이 오면 내려간다). 랭킹에서 빠진 기록이면 `rank: null`.
 - 오답 제한: 오답마다 세션의 오답 횟수를 1 올린다. 50번을 넘으면 정답 여부와 상관없이 429.
 - hints: 키는 단계 번호 1~8, 값은 0~3 정수. 벗어나면 400 `invalid_body`.
-- stageTimes: 키는 1~8, 값은 0 이상 정수. 기록용으로 저장만 하고 finalTime 계산에는 쓰지 않는다. answer 는 200자 이하.
-- sessionId 가 uuid 모양이 아니거나 DB 에 없으면 400 `invalid_session`.
+- stageTimes: 키는 1~8, 값은 0 이상 정수. 기록용으로 저장만 하고 finalTime 계산에는 쓰지 않는다. key 는 200자 이하.
+- sessionId 가 없거나, uuid 모양이 아니거나, DB 에 없으면 400 `invalid_session`.
 - 처리 순서: 요청 검사 → 세션 조회 → 이미 클리어했으면 저장된 결과 → 오답 제한(429) → 오답 기록 또는 클리어 처리. DB 쪽은 함수 `finish_session` 하나(한 트랜잭션)로 처리하고, 같은 세션의 동시 요청은 행 잠금으로 하나씩 처리된다.
 - 이상 기록: 시작(`sessions.started_at`)부터 1분 안에 클리어하면 기록은 저장하되 랭킹에 넣지 않고 `rank: null`. 기준은 4주차 테스트 후 결정.
 
 알려진 한계
+- 플레이어가 fetch 대신 XHR 등으로 보내면 화면이 세션 정보를 못 붙여 400 `invalid_session` 이 된다. 힌트 3이 fetch 를 분명히 알려 준다.
 - 힌트 개수는 클라이언트가 보낸 값을 믿는다. 0으로 줄여 보내면 막을 수 없다. 개선안은 [backlog.md](backlog.md).
 
 ### GET /api/ranking
 - 200: `{ "rankings": [{ "rank": 1, "nickname": "익명", "finalTime": 1820000, "hintsUsed": 0 }] }` (상위 50명, finalTime 오름차순)
-- 순위 = 나보다 기록이 좋은 사람 수 + 1. 기록이 같으면 같은 순위 (1, 2, 2, 4). `/api/verify` 의 `rank` 와 같은 규칙
+- 순위 = 나보다 기록이 좋은 사람 수 + 1. 기록이 같으면 같은 순위 (1, 2, 2, 4). `/system/terminate` 의 `rank` 와 같은 규칙
 - 500: `{ "error": "db_error" }`
 - Vercel Cron 이 하루 한 번 부른다 ([vercel.json](../vercel.json)). Supabase 무료 프로젝트 일시정지 방지
 

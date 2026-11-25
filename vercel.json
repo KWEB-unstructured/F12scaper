@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["icn1"],
+  "rewrites": [{ "source": "/system/terminate", "destination": "/api/verify" }],
   "crons": [{ "path": "/api/ranking", "schedule": "0 18 * * *" }]
 }
