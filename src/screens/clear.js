@@ -1,6 +1,11 @@
 // 담당: 정씨 · 클리어 화면 (최종 기록, 단계별 소요 시간, 사용한 개발자 도구 기능 카드, 공유)
+// 처음 들어오면 결말 장면(content/interludes.js 의 'ending')을 먼저 틀고 기록을 보여 준다.
+// 8단계 통과 → ESCAPE COMPLETE(screens/stage.js) → 결말 장면 → 클리어 화면. 장면 도중 새로고침해도 여기서 다시 튼다.
 import { loadProgress, resetProgress } from '../core/state.js';
-import { clearScenes } from './scenes-state.js';
+import { clearScenes, loadScenes, beginScene, endScene } from './scenes-state.js';
+import { playInterlude } from '../ui/interlude.js';
+import { INTERLUDES } from '../content/interludes.js';
+import { speakerName } from '../content/characters.js';
 import { totalHintsUsed } from '../core/game.js';
 import { formatDuration } from '../core/format.js';
 import { STAGES } from '../stages/index.js';
@@ -9,6 +14,23 @@ import { ETHICS_NOTICE, CLEAR_TITLE } from '../content/story.js';
 export function renderClear(root, { go }) {
   const p = loadProgress();
   if (!p?.result) return go('start');
+
+  const ending = INTERLUDES.ending;
+  if (ending?.length && !loadScenes().seen.includes('ending')) {
+    beginScene('ending');
+    // 결말은 4단계 반전 뒤라 진짜 이름을 쓴다
+    const scene = playInterlude(root, ending, { nameOf: (key) => speakerName(key, true) });
+    let left = false;
+    scene.done.then(() => {
+      if (left) return;
+      endScene('ending');
+      renderClear(root, { go });
+    });
+    return () => {
+      left = true;
+      scene.destroy();
+    };
+  }
 
   root.innerHTML = `
     <section class="screen clear-screen">

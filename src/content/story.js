@@ -72,3 +72,9 @@ export const HINT_SUGGEST = '너무 오래 붙잡고 있었나… 힌트를 볼�
 /** 8단계 서버 검증 실패 */
 export const SERVER_DOWN = '서버가 응답하지 않습니다. 잠시 후 다시 입력하세요.';
 export const TOO_MANY_ATTEMPTS = '비정상 시도가 너무 많아 입력이 차단되었습니다.';
+
+/**
+ * 8단계 콘솔 종료 요청이 400 으로 거절됐을 때 주인공 독백 (JSON.stringify 를 빠뜨렸거나 key 가 없을 때).
+ * 서버가 응답 message 에 이유를 적어 주니, 그쪽을 보게 유도한다. TODO(형씨): 문구 다듬기
+ */
+export const TERMINATE_REJECTED = '요청이 거절됐어. 서버가 뭐라고 답했는지 응답을 열어 보자. (Network 탭이나 .then(r => r.json()))';

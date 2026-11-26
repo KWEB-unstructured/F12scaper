@@ -9,6 +9,7 @@
 //     .game-bar     아래: 정답 입력(터미널) + 힌트 보기
 //     .dlg          단계를 처음 시작할 때 시작 대사를 대사창으로 (ui/dialogue.js)
 //     .game-toast   크롤러 경고 (입력창 위에서 떠올랐다 사라짐) + 화면 가장자리 붉게
+//     (8단계)       입력창 없음. 콘솔 fetch('/system/terminate') 를 감싸 결과를 받는다 (screens/terminate-fetch.js)
 //     .il           이야기 장면 (ui/interlude.js). 단계 통과 뒤 'after-N', 4단계 반전 'reveal' 등을 화면 전체에 덮어 튼다
 //
 // 화자 이름·진행률 라벨·문구는 content/ 데이터 파일에서 읽는다. 대사·힌트는 textContent 로만 넣는다.
@@ -25,16 +26,17 @@ import {
   WRONG_BEFORE_HINT_SUGGEST,
   TOTAL_STAGES,
 } from '../core/game.js';
-import { loadProgress, resetProgress, saveProgress } from '../core/state.js';
+import { loadProgress, resetProgress, saveProgress, getVerifyPayload } from '../core/state.js';
 import { verifyFinal } from '../core/api.js';
 import { formatDuration } from '../core/format.js';
-import { DEFAULT_TAUNTS, HINT_SUGGEST, PROMPT, SERVER_DOWN, TOO_MANY_ATTEMPTS, GAME_UI, STAGE_CLEAR, stageUrl } from '../content/story.js';
+import { DEFAULT_TAUNTS, HINT_SUGGEST, PROMPT, SERVER_DOWN, TOO_MANY_ATTEMPTS, TERMINATE_REJECTED, GAME_UI, STAGE_CLEAR, stageUrl } from '../content/story.js';
 import { speakerName, DEFAULT_SPEAKER, PROGRESS_LABEL, wrongAlertTitle } from '../content/characters.js';
 import { createDialogue } from '../ui/dialogue.js';
 import { playInterlude } from '../ui/interlude.js';
 import { INTERLUDES, afterStage } from '../content/interludes.js';
 import { confirmModal } from '../ui/modal.js';
 import { isRevealed, clearScenes, loadScenes, beginScene, endScene, markRevealed } from './scenes-state.js';
+import { installTerminateFetch } from './terminate-fetch.js';
 
 /** 모을 수 있는 인증 키 조각 수 (1~7단계에서 하나씩, 8단계는 조합) */
 const TOTAL_PIECES = TOTAL_STAGES - 1;
@@ -430,6 +432,29 @@ export function renderStage(root, { go }) {
     else onWrong();
   });
 
+  // ── 8단계: 콘솔에서 보내는 종료 요청을 감싼다 (2026-11-24 결정 1) ──
+  // 플레이어는 key 만 보내고, 기록용 정보는 여기서 덧붙인다. 결과는 플레이어 콘솔과 별개로 화면이 받아서 처리한다.
+  let restoreFetch = null;
+  if (stage.verify === 'terminate') {
+    restoreFetch = installTerminateFetch({
+      extra: () => {
+        const { answer, ...rest } = getVerifyPayload(p, '');
+        return rest;
+      },
+      onResult: ({ status, data }) => {
+        if (solved || destroyed) return;
+        if (status === 200 && data?.ok) {
+          // 결과를 넣은 뒤 completeStage 가 저장한다. 최종 키는 저장하지 않는다
+          p.result = { finalTime: data.finalTime, rank: data.rank ?? null };
+          solve('');
+        } else if (status === 200) onWrong();
+        else if (status === 429) taunt(TOO_MANY_ATTEMPTS);
+        else if (status === 400) say(TERMINATE_REJECTED);
+        else taunt(SERVER_DOWN);
+      },
+    });
+  }
+
   hintBtn.addEventListener('click', async () => {
     const next = p.hints[p.stage] ?? 0;
     if (next >= stage.hints.length) return;
@@ -499,6 +524,7 @@ export function renderStage(root, { go }) {
     removeClearKeys?.();
     document.removeEventListener('click', onDocClick);
     dialogue.destroy();
+    restoreFetch?.();
     stageCleanup?.();
   };
 }

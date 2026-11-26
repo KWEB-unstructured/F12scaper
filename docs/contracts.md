@@ -78,7 +78,7 @@ export default {
 - **기록은 1단계부터 잰다.** 프롤로그 시간은 기록에 들어가지 않는다.
 - 이름이 `/api/start` 에서 거절(400)되면 프롤로그 마지막 화면에서 다시 받는다.
 - 시작할 때 `f12escape:progress` 가 있으면 단계 화면, 없고 `f12escape:prologue` 가 있으면 프롤로그를 이어 간다.
-- 개발용: 개발 서버에서만 `?reset`(모두 지움), `?scene=archive`(그 장면부터), `?stage=6`(그 단계부터, 서버 없이 개발용 진행 생성), `?interlude=after-3`(그 이야기 장면부터, 끝나면 이어지는 단계로). 배포판에서는 무시한다.
+- 개발용: 개발 서버에서만 `?reset`(모두 지움), `?scene=archive`(그 장면부터), `?stage=6`(그 단계부터, 서버 없이 개발용 진행 생성), `?interlude=after-3`(그 이야기 장면부터, 끝나면 이어지는 단계로. `?interlude=ending` 은 다 깬 개발용 진행을 만들고 결말 → 클리어 화면). 배포판에서는 무시한다.
 
 ### 2-2. 이야기 장면 (데이터 [src/content/interludes.js](../src/content/interludes.js) · 저장 localStorage `f12escape:scenes`)
 
@@ -89,7 +89,7 @@ export default {
 |---|---|
 | `after-N` | N단계 통과 연출 직후, N+1단계로 넘어가기 전 (`afterStage(N)`). 데이터에 없으면 건너뛴다 |
 | `reveal` | 4단계에서 쿠키를 admin 으로 바꾸고 새로고침한 순간. `stage4.js` 가 `ctx.playScene('reveal')` |
-| `ending` | 8단계 탈출 뒤 결말 (8단계·결말 작업 때 연결) |
+| `ending` | 8단계 탈출 뒤 결말. ESCAPE COMPLETE 연출 뒤 클리어 화면(`screens/clear.js`)이 처음 그려질 때 튼다. 보는 중 새로고침하면 클리어 화면이 다시 튼다 |
 
 장면 = 조각(beat) 배열. 조각 하나:
 ```js
@@ -98,6 +98,8 @@ export default {
   log: { title: 'crawler.log', lines: [{ at: '2016-11-24 23:59', text: '...', speaker: 'crawler', delay: 700 }] }, // 로그 재생
   screen: { url: 'http://...', title: '...', body: ['...'] },   // 모형 화면 (log 와 둘 중 하나)
   reveal: true,   // 이 조각부터 개발자·크롤러 진짜 이름
+  fx: 'shutdown', // 조각을 시작하기 전에 앞 조각 화면이 가로줄로 접히며 꺼진다 (서버 종료). 그 뒤 바탕은 검정
+  backdrop: 'library', // 막 뒤 배경: 'library'(프롤로그 도서관 사진) | 'black'. 다음 조각에도 이어진다
 }
 ```
 - 로그가 다 찍히면 대사가 이어진다. 대사 없는 모형 화면·로그는 클릭을 기다린다.
@@ -149,6 +151,8 @@ export default {
 | 500 | `{ "error": "db_error" \| "final_answer_not_configured" }` (Production 에 `FINAL_ANSWER` 가 없을 때) |
 | message | 콘솔에서 응답을 열어 본 플레이어가 읽는 이야기 문구. 문구는 형씨, 위치는 [api/_lib/terminate-messages.js](../api/_lib/terminate-messages.js) |
 
+- 화면 쪽 감싸기: [src/screens/terminate-fetch.js](../src/screens/terminate-fetch.js). 8단계 화면이 설치하고 떠날 때 원래 `fetch` 로 돌려놓는다. 경로가 `/system/terminate`·`/api/verify` 인 같은 출처 `POST` 만 손대고(문자열·URL·`Request` 모두), 본문이 JSON 객체 문자열일 때만 기록용 필드를 덧붙인다(같은 이름이면 화면 값 우선). 플레이어에게는 원래 응답을 그대로 돌려준다.
+- 화면의 결과 처리: 200 정답 → 진행 저장에 `result` → ESCAPE COMPLETE → 결말 장면 → 클리어 화면 · 200 오답 → 크롤러 오답 경고 · 400 → 주인공 독백으로 응답을 열어 보라고 유도 · 429 → 차단 안내 · 그 밖·네트워크 오류 → 서버 응답 없음 안내
 - 서버 계산: `finalTime = (now - sessions.started_at) + penaltyMsFromHints(hints)` ([src/core/rules.js](../src/core/rules.js) 공용)
 - `Content-Type: application/json` 을 붙였는데 본문이 깨진 JSON 이면 Vercel 이 함수까지 오기 전에 400 (본문 없음)을 보낸다. 로컬 플러그인도 똑같이 한다.
 

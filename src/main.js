@@ -44,13 +44,15 @@ function go(name) {
 // 게임 안의 "처음부터 다시"(resetProgress)와는 별개다.
 //   ?stage=6        그 단계부터 바로 (서버 없이 개발용 진행을 만든다. 앞 단계 조각은 비어 있다)
 //   ?interlude=after-3  그 이야기 장면부터 (content/interludes.js 의 id). 장면이 끝나면 이어지는 단계로
-//                   (after-N → N+1단계, reveal → 4단계, 그 밖은 1단계. ?stage= 를 같이 주면 그 단계)
+//                   (after-N → N+1단계, reveal → 4단계, ending → 클리어 화면, 그 밖은 1단계. ?stage= 를 같이 주면 그 단계)
 if (import.meta.env.DEV) {
   const params = new URLSearchParams(location.search);
   const scene = params.get('scene');
   const interlude = params.get('interlude');
   const after = /^after-(\d)$/.exec(interlude ?? '');
-  const stage = Number(params.get('stage')) || (after ? Number(after[1]) + 1 : interlude === 'reveal' ? 4 : interlude ? 1 : 0);
+  const stage =
+    Number(params.get('stage')) ||
+    (after ? Number(after[1]) + 1 : interlude === 'reveal' ? 4 : interlude && interlude !== 'ending' ? 1 : 0);
   if (params.has('reset') || scene || params.has('stage') || interlude) {
     resetProgress();
     clearPrologue();
@@ -61,6 +63,13 @@ if (import.meta.env.DEV) {
       // sessionId 를 고정해 두면 같은 탭에서는 시작 대사창을 한 번만 본다 (다시 보려면 새 탭)
       const p = createProgress({ sessionId: 'dev-local', nickname: '개발자', startedAt: new Date().toISOString() });
       p.stage = stage;
+      saveProgress(p);
+    }
+    if (interlude === 'ending') {
+      // 결말은 클리어 화면이 튼다: 다 깬 진행 + 가짜 결과
+      const p = createProgress({ sessionId: 'dev-local', nickname: '개발자', startedAt: new Date().toISOString() });
+      p.stage = TOTAL_STAGES + 1;
+      p.result = { finalTime: 0, rank: null };
       saveProgress(p);
     }
     if (interlude) saveScenes({ seen: [], pending: [interlude], revealed: false });
