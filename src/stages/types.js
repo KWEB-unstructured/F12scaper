@@ -15,6 +15,9 @@
  * @property {(line: GuideLine) => void} say        대사 한 줄 추가 (문자열이면 주인공 독백)
  * @property {(text: string) => void} taunt          크롤러 경고를 띄움
  * @property {Readonly<Record<number, string>>} fragments   지금까지 얻은 조각 (8단계용)
+ * @property {(id: string) => Promise<void>} playScene
+ *           이야기 장면(content/interludes.js 의 id)을 화면 전체에 덮어 튼다. 끝나면 풀린다.
+ *           이미 본 장면이면 바로 풀린다 (새로고침이 퍼즐의 일부인 4단계에서도 한 번만 나온다)
  */
 
 /**

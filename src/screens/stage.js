@@ -9,6 +9,7 @@
 //     .game-bar     아래: 정답 입력(터미널) + 힌트 보기
 //     .dlg          단계를 처음 시작할 때 시작 대사를 대사창으로 (ui/dialogue.js)
 //     .game-toast   크롤러 경고 (입력창 위에서 떠올랐다 사라짐) + 화면 가장자리 붉게
+//     .il           이야기 장면 (ui/interlude.js). 단계 통과 뒤 'after-N', 4단계 반전 'reveal' 등을 화면 전체에 덮어 튼다
 //
 // 화자 이름·진행률 라벨·문구는 content/ 데이터 파일에서 읽는다. 대사·힌트는 textContent 로만 넣는다.
 import {
@@ -24,14 +25,16 @@ import {
   WRONG_BEFORE_HINT_SUGGEST,
   TOTAL_STAGES,
 } from '../core/game.js';
-import { loadProgress, resetProgress } from '../core/state.js';
+import { loadProgress, resetProgress, saveProgress } from '../core/state.js';
 import { verifyFinal } from '../core/api.js';
 import { formatDuration } from '../core/format.js';
 import { DEFAULT_TAUNTS, HINT_SUGGEST, PROMPT, SERVER_DOWN, TOO_MANY_ATTEMPTS, GAME_UI, STAGE_CLEAR, stageUrl } from '../content/story.js';
 import { speakerName, DEFAULT_SPEAKER, PROGRESS_LABEL, wrongAlertTitle } from '../content/characters.js';
 import { createDialogue } from '../ui/dialogue.js';
+import { playInterlude } from '../ui/interlude.js';
+import { INTERLUDES, afterStage } from '../content/interludes.js';
 import { confirmModal } from '../ui/modal.js';
-import { isRevealed, clearScenes } from './scenes-state.js';
+import { isRevealed, clearScenes, loadScenes, beginScene, endScene, markRevealed } from './scenes-state.js';
 
 /** 모을 수 있는 인증 키 조각 수 (1~7단계에서 하나씩, 8단계는 조합) */
 const TOTAL_PIECES = TOTAL_STAGES - 1;
@@ -269,6 +272,37 @@ export function renderStage(root, { go }) {
   tick();
   const interval = setInterval(tick, 1000);
 
+  // ── 이야기 장면 (2026-11-24 결정 3) ──
+  // 장면은 줄을 세워 하나씩 튼다. 본 장면(건너뛴 장면 포함)은 다시 틀지 않고,
+  // 보던 중 새로고침하면 scenes-state 의 남은 장면(pending)을 단계 화면을 그릴 때 처음부터 다시 튼다.
+  // 장면을 보는 시간도 기록에 들어간다 (서버는 시작 시각 기준). 다만 단계별 시간에는 넣지 않으려고,
+  // 단계 통과 뒤 장면이 끝나면 다음 단계에 들어온 시각을 장면이 끝난 시각으로 다시 잡는다.
+  let destroyed = false;
+  let sceneChain = Promise.resolve();
+  /** @type {ReturnType<typeof playInterlude> | null} */
+  let activeScene = null;
+  /** @param {string} id content/interludes.js 의 장면 id. 끝나면(또는 틀 장면이 없으면) 풀리는 Promise */
+  const playScene = (id) => {
+    sceneChain = sceneChain.then(async () => {
+      const beats = INTERLUDES[id];
+      if (destroyed || !beats?.length || loadScenes().seen.includes(id)) return;
+      beginScene(id);
+      activeScene = playInterlude(screen, beats, { nameOf, onReveal: markRevealed });
+      await activeScene.done;
+      activeScene = null;
+      if (destroyed) return;
+      endScene(id);
+      if (id === 'reveal') markRevealed();
+      if (id.startsWith('after-')) {
+        p.stageEnteredAt = Date.now();
+        saveProgress(p);
+      }
+    });
+    return sceneChain;
+  };
+  // 지난번에 보다 만 장면부터
+  loadScenes().pending.forEach(playScene);
+
   // ── 단계 통과: 저장은 바로 하고, 연출(약 1.8초)이 끝나면 다음 단계로 ──
   // 화면 네 변 초록빛 → 가운데 ACCESS GRANTED 두 번 깜박 → 인증 키 조각 칸이 하나 채워짐.
   // 클릭·Enter·Space·Esc 로 넘길 수 있다. 입력창으로 맞히든 콘솔 unlock() 으로 통과하든 같은 연출.
@@ -337,7 +371,12 @@ export function renderStage(root, { go }) {
     const from = piecesOf(p.stage);
     completeStage(p, fragment);
     const final = isFinished(p);
-    playClear(from, piecesOf(p.stage), final).then(() => go('stage'));
+    // 통과 연출 → 이 단계 뒤 이야기 장면(있으면) → 다음 단계
+    playClear(from, piecesOf(p.stage), final)
+      .then(() => playScene(afterStage(stage.id)))
+      .then(() => {
+        if (!destroyed) go('stage');
+      });
   };
 
   const form = $('[data-form]');
@@ -358,6 +397,7 @@ export function renderStage(root, { go }) {
     say,
     taunt: (text) => taunt(text),
     fragments: Object.freeze({ ...p.fragments }),
+    playScene,
   });
 
   form.hidden = stage.input === false;
@@ -434,19 +474,25 @@ export function renderStage(root, { go }) {
   });
 
   renderHintButton();
-  if (!guideLines.length || wasGuideSeen(p)) {
-    showGuideInfo();
-    focusAnswer();
-  } else {
-    dialogue.play(guideLines).then(() => {
-      if (solved) return;
-      markGuideSeen(p);
+  // 시작 대사는 이어 트는 장면·퍼즐이 튼 장면(4단계 반전 등)이 끝난 뒤에
+  sceneChain.then(() => {
+    if (destroyed || solved) return;
+    if (!guideLines.length || wasGuideSeen(p)) {
       showGuideInfo();
       focusAnswer();
-    });
-  }
+    } else {
+      dialogue.play(guideLines).then(() => {
+        if (solved) return;
+        markGuideSeen(p);
+        showGuideInfo();
+        focusAnswer();
+      });
+    }
+  });
 
   return () => {
+    destroyed = true;
+    activeScene?.destroy();
     clearInterval(interval);
     clearTimeout(toastTimer);
     clearTimers.forEach(clearTimeout);
