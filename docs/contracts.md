@@ -163,7 +163,7 @@ export default {
 - stageTimes: 키는 1~8, 값은 0 이상 정수. 기록용으로 저장만 하고 finalTime 계산에는 쓰지 않는다. key 는 200자 이하.
 - sessionId 가 없거나, uuid 모양이 아니거나, DB 에 없으면 400 `invalid_session`.
 - 처리 순서: 요청 검사 → 세션 조회 → 이미 클리어했으면 저장된 결과 → 오답 제한(429) → 오답 기록 또는 클리어 처리. DB 쪽은 함수 `finish_session` 하나(한 트랜잭션)로 처리하고, 같은 세션의 동시 요청은 행 잠금으로 하나씩 처리된다.
-- 이상 기록: 시작(`sessions.started_at`)부터 1분 안에 클리어하면 기록은 저장하되 랭킹에 넣지 않고 `rank: null`. 기준은 4주차 테스트 후 결정.
+- 이상 기록: 시작(`sessions.started_at`)부터 **5분** 안에 클리어하면 기록은 저장하되 랭킹에 넣지 않고 `rank: null`. (2026-11-26 1분 → 5분)
 
 알려진 한계
 - 플레이어가 fetch 대신 XHR 등으로 보내면 화면이 세션 정보를 못 붙여 400 `invalid_session` 이 된다. 힌트 3이 fetch 를 분명히 알려 준다.

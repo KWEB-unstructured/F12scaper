@@ -97,8 +97,9 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [localApi()],
     build: {
-      // 플레이어가 Sources 탭에서 원본 코드를 읽을 수 있게 소스맵을 같이 배포한다.
-      sourcemap: true,
+      // 소스맵을 만들지 않는다 (2026-11-26). Vercel 이 Production 의 .map 을 403 으로 막아서 플레이어는 어차피 못 보고,
+      // 개발자 도구가 받으려다 실패하면 콘솔에 경고만 남는다. Sources 에서 읽어야 하는 퍼즐 코드는 public/stages/ 에 둔다.
+      sourcemap: false,
     },
   };
 });

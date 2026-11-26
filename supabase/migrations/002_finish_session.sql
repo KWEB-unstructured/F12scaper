@@ -3,7 +3,7 @@
 -- Supabase SQL Editor 에 통째로 붙여 넣고 Run. 여러 번 실행해도 안전하다.
 
 -- 1. 클리어 기록을 세션에도 저장한다.
---    랭킹에서 빠진 기록(1분 미만)도 "이미 클리어한 세션"에 같은 결과를 돌려줘야 하기 때문이다.
+--    랭킹에서 빠진 기록(기준 시간 미만)도 "이미 클리어한 세션"에 같은 결과를 돌려줘야 하기 때문이다.
 alter table public.sessions add column if not exists final_time integer;  -- ms, 클리어 전에는 null
 
 -- 2. 최종 정답 제출을 한 번에 처리하는 함수.

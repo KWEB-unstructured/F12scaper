@@ -45,7 +45,9 @@
 | 5단계 | 버튼을 눌러도 Network 에 `stage5` 가 안 보일 때는 화면이 알 수 없으므로, 힌트 2 끝에 한 줄 | "Network 탭에 아무것도 안 보이면 광고 차단을 끄고 다시 눌러 봐." | 김씨 |
 | 8단계 `SERVER_DOWN` | 응답이 없을 때 | 위와 같은 안내 | 정씨 · 형씨 |
 
-## 4. 결정이 필요한 것: 소스맵
+## 4. 소스맵 — 결정: 끄기 (2026-11-26)
+
+`vite.config.js` 를 `sourcemap: false` 로 바꿨다. 아래는 결정 근거.
 
 `vite.config.js` 는 "플레이어가 Sources 탭에서 원본 코드를 읽을 수 있게" 소스맵을 같이 빌드한다. 그런데 **Vercel 이 Production 의 `.map` 파일을 403 으로 막고 있다** (`/assets/index-*.js.map` → 403).
 

@@ -12,7 +12,7 @@ import { normalize } from '../src/core/hash.js';
 import { penaltyMsFromHints, countHints, HINT_PENALTY_MIN } from '../src/core/rules.js';
 
 const MAX_WRONG_ATTEMPTS = 50; // 세션당 오답 허용 횟수
-const MIN_RANKED_MS = 60_000; // 이보다 빨리 깬 기록은 랭킹에서 뺀다 (4주차 테스트 후 조정)
+const MIN_RANKED_MS = 5 * 60_000; // 이보다 빨리 깬 기록은 랭킹에서 뺀다 (2026-11-26 1분 → 5분. 근거는 docs/operations.md 4절)
 const MAX_KEY_LENGTH = 200;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
