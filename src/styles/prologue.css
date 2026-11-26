@@ -3,7 +3,7 @@
    상태 클래스: .is-zoomed (모니터로 줌인) · .is-full (모니터가 화면 전체) · .no-anim (이어 하기 때 즉시 적용) */
 
 .prologue {
-  /* 배경 이미지 (public/prologue/library-bg.png, 1672 × 941) 의 가로세로 비율.
+  /* 배경 이미지 (public/prologue/library-bg.webp, 1672 × 941) 의 가로세로 비율.
      도서관 전체(.pl-world)를 이 비율로 만들어 화면을 덮으므로, 창 크기가 달라도 아래 좌표가 이미지와 어긋나지 않는다. */
   --img-ratio: calc(1672 / 941);
   --world-w: max(100vw, calc(100vh * var(--img-ratio)));
@@ -76,7 +76,7 @@
   position: absolute;
   inset: 0;
   background:
-    url('/prologue/library-bg.png') 0 0 / 100% 100% no-repeat,
+    url('/prologue/library-bg.webp') 0 0 / 100% 100% no-repeat,
     linear-gradient(180deg, transparent 72%, #2a1d14 72%, #1c140e 100%),
     repeating-linear-gradient(90deg, #3a2a1e 0 6px, #5b3f2a 6px 34px, #2e2118 34px 40px, #6b4a30 40px 70px),
     #2a1f17;

@@ -2,7 +2,8 @@
 // 단계 화면: 화면 전체를 쓰는 "갇힌 사이트" 게임 화면
 //
 //   .game
-//     .hud          상단: 구간·단계 이름 · 진행 점 · 탈출 진행률 · 기록 · ☰ 메뉴(처음부터 다시)
+//     .hud          상단: 구간·단계 번호·이름 · 인증 키 조각 n/7 · 기록 · ☰ 메뉴(처음부터 다시)
+//                   (단계 진행 점 8칸은 조각 7칸과 겹쳐서 뺐다. 몇 단계인지는 "STAGE n / 8" 글자로 본다)
 //     .site         가운데: 가짜 브라우저 창 (주소창 + 정보 표시줄 + 퍼즐)
 //       .infobar    주인공 독백(시작 대사·힌트)이 뜨는 곳. 이미 받은 힌트는 ‹ › 로 다시 본다
 //       .puzzle     퍼즐이 mount 되는 곳. 단계 파일들이 .puzzle[data-puzzle] 을 전제로 하므로 바꾸지 않는다
@@ -96,7 +97,6 @@ export function renderStage(root, { go }) {
           <span class="hud-kicker" data-kicker></span>
           <h1 class="hud-title" data-title></h1>
         </div>
-        <ol class="steps" data-steps aria-hidden="true"></ol>
         <span class="pieces"><span data-progress-label></span>
           <span class="pips" aria-hidden="true">${pipsHtml(pieces)}</span>
           <strong>${pieces}/${TOTAL_PIECES}</strong></span>
@@ -169,11 +169,6 @@ export function renderStage(root, { go }) {
   $('[data-submit]').textContent = GAME_UI.submit;
   $('[data-hint-label]').textContent = GAME_UI.askBrowser;
   $('#answer').placeholder = GAME_UI.placeholder;
-  $('[data-steps]').append(
-    ...Array.from({ length: TOTAL_STAGES }, (_, i) =>
-      make('li', { className: i + 1 < p.stage ? 'done' : i + 1 === p.stage ? 'now' : '' }),
-    ),
-  );
 
   // ── 정보 표시줄: 주인공 독백(시작 대사·힌트)이 짧게 뜨는 곳. 메시지가 여러 개면 ‹ › 로 넘겨 본다 ──
   /** @type {{ speaker: string, label?: string, lines: string[] }[]} */

@@ -275,7 +275,7 @@ input:focus {
 .ts-bg {
   position: absolute;
   inset: -24px;
-  background: url('/prologue/library-bg.png') center / cover no-repeat;
+  background: url('/prologue/library-bg.webp') center / cover no-repeat;
   filter: blur(6px) brightness(0.32) saturate(0.75);
   animation:
     ts-drift 40s ease-in-out infinite alternate,
@@ -560,27 +560,6 @@ input:focus {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-/* 8칸 진행 점: 푼 단계 초록, 지금 단계 앰버 */
-.steps {
-  display: flex;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.steps li {
-  width: 16px;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--border);
-}
-.steps li.done {
-  background: var(--ok);
-}
-.steps li.now {
-  background: var(--accent);
-  box-shadow: 0 0 8px rgb(245 165 36 / 0.6);
 }
 /* 인증 키 조각: 7칸 중 모은 만큼 채운다 */
 .pieces {
@@ -1223,7 +1202,6 @@ tr.mine {
     margin-left: auto;
   }
   .hud-kicker,
-  .steps,
   .site-nav {
     display: none;
   }

@@ -238,7 +238,7 @@
   z-index: -1;
   background:
     linear-gradient(rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.7)),
-    url('/prologue/library-bg.png') center / cover no-repeat;
+    url('/prologue/library-bg.webp') center / cover no-repeat;
   animation: il-wake 2.6s ease-out;
 }
 /* 눈을 뜨듯: 어둡고 흐린 상태에서 천천히 또렷해진다 */
