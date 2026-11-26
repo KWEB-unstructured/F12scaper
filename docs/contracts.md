@@ -12,7 +12,7 @@
 /** @type {import('./types.js').Stage} */
 export default {
   id: 1,
-  title: '개발자의 흔적',
+  title: '다음에 올 사람에게',
   tool: 'Elements — HTML 주석',          // 클리어 카드 제목
   toolUsage: '실무에서는 ...',             // 클리어 카드 설명 한 줄
   guide: ['...', { speaker: 'developer', text: '...' }], // 단계 시작 대사. 문자열이면 주인공 독백

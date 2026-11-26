@@ -19,10 +19,11 @@ export default {
     '그리고 하나 더. 화면에 보이는 신호를 그대로 믿으면 안 될지도 몰라. 진짜는 화면 뒤에 있을 거야.',
   ],
   answerHash: '350a75e9fcb0481ffdbb5d30517265700a8f9fa6b9bab5a0fdf9ad849a2377ce', // 임시 정답 test7
+  // 힌트는 주인공 독백 (2026-11-24 결정 2-1). TODO(형씨): 정씨가 존댓말 → 반말로만 바꿨다. 다듬기
   hints: [
-    '화면 캡처나 빠른 눈으로는 어려워요. 코드가 실행되는 도중에 멈춰서 값을 보는 방법이 있어요.',
-    'F12 의 Sources 탭에서 왼쪽 파일 목록의 stages 폴더 안 stage7-flash.js 를 여세요. (stage7.js 가 아니라 stage7-flash.js 예요!) 화면에 뜨는 값은 가짜일 수 있으니, 진짜 값이 만들어지는 곳을 찾아 줄 번호를 눌러 중단점을 거세요.',
-    'stage7-flash.js 62번째 줄 showFlash(decoyValue); 의 줄 번호를 눌러 중단점을 걸어요. 3초 안에 코드가 멈추면 오른쪽 Scope 의 Local 에서 flashValue 값을 읽고, ▶ 로 재개하세요. (화면에 뜬 값이 아니라 flashValue 예요.)',
+    '화면 캡처나 빠른 눈으로는 무리야. 코드가 실행되는 도중에 멈춰서 값을 볼 방법이 있을 거야.',
+    'F12 의 Sources 탭에서 왼쪽 파일 목록의 stages 폴더 안 stage7-flash.js 를 열자. (stage7.js 가 아니라 stage7-flash.js!) 화면에 뜨는 값은 가짜일 수 있으니, 진짜 값이 만들어지는 곳을 찾아 줄 번호를 눌러 중단점을 걸자.',
+    'stage7-flash.js 62번째 줄 showFlash(decoyValue); 의 줄 번호를 눌러 중단점을 걸자. 3초 안에 코드가 멈추면 오른쪽 Scope 의 Local 에서 flashValue 값을 읽고, ▶ 로 재개. (화면에 뜬 값이 아니라 flashValue 야.)',
   ],
   taunts: [
     '신호 송출 완료. 육안으로는 확인되지 않았습니다.',
