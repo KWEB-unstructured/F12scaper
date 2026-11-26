@@ -98,8 +98,6 @@ for i in $(seq 1 51); do curl -s -X POST $T -H "$J" -d "{\"sessionId\":\"$SID\",
 ``sql
 delete from public.sessions where nickname = '테스트';
 ``
-## 6. 출시 직전
+## 6. 출시 직전과 그 뒤
 
-- Production 에서 `mock: true` 가 나오는 API 가 없는지
-- 테스트 중 쌓인 `sessions`·`rankings` 정리 (4주차, 실행 전 팀 확인)
-- 소스맵(`*.js.map`)에는 원본 코드가 그대로 들어간다. 비밀값이 코드에 없는지 한 번 더 확인 (`FINAL_ANSWER`·키는 환경변수에만)
+[operations.md](operations.md) 5절 체크리스트를 따른다. 호환성 점검은 [compat-checklist.md](compat-checklist.md), 기록 분석·정리 SQL 은 [supabase/queries/](../supabase/queries/).
