@@ -31,7 +31,7 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  /* 글꼴: 웹폰트는 Nanum Gothic Coding 하나만 쓴다 (index.html 에서 불러옴) */
+  /* 글꼴: 웹폰트는 Nanum Gothic Coding(화면 전반) · Nanum Gothic(프롤로그 블로그 본문, 2016년 느낌) 두 개 (index.html 에서 불러옴) */
   --font-mono: 'Nanum Gothic Coding', ui-monospace, 'D2Coding', Consolas, monospace;
   --font-sans: system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --fs-sm: 0.875rem;

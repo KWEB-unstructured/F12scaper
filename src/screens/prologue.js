@@ -52,7 +52,6 @@ export function renderPrologue(root, { go }) {
           <div class="pl-screen" data-screen></div>
         </div>
       </div>
-      <p class="pl-corner" data-corner hidden></p>
       <p class="pl-nudge" data-nudge hidden></p>
       <p class="pl-chip" data-chip role="status" hidden></p>
       <div class="pl-streaks" aria-hidden="true"></div>
@@ -163,8 +162,6 @@ export function renderPrologue(root, { go }) {
     if (el) el.textContent = url;
   }
 
-  /** 개발자가 숨겨 둔 말에 붙이는 표시 (콘솔의 "[ ??? ]" 와 같은 사람) */
-  const devTag = () => `[ ${speakerName('developer', false)} ]`;
 
   // ───────── 1) library: 미연시 내레이션 → 모니터로 줌인 ─────────
   async function library() {
@@ -276,16 +273,26 @@ export function renderPrologue(root, { go }) {
   async function archiveScene() {
     setScene('archive');
     const view = renderBrowser(ARCHIVE.origin + ARCHIVE.article.path);
+    // 개발자가 직접 만든 정적 블로그: 머리글(이름·메뉴) / 본문 + 옆줄(프로필·태그·지난 글·방문자) / 바닥글
     view.innerHTML = `
       <div class="pl-page pl-site">
-        <header class="pl-site-head"><strong class="pl-logo" data-logo></strong><nav class="pl-nav" data-nav></nav></header>
-        <main class="pl-site-main" data-main></main>
+        <header class="pl-site-head">
+          <button type="button" class="pl-logo" data-logo></button>
+          <nav class="pl-nav" data-nav></nav>
+        </header>
+        <div class="pl-site-body">
+          <main class="pl-site-main" data-main></main>
+          <aside class="pl-side" data-side></aside>
+        </div>
         <footer class="pl-site-foot" data-foot></footer>
       </div>`;
-    view.querySelector('[data-logo]').textContent = SITE_NAME;
-    view.querySelector('[data-foot]').textContent = ARCHIVE.footer;
     const nav = view.querySelector('[data-nav]');
     const main = view.querySelector('[data-main]');
+    view.querySelector('[data-logo]').textContent = SITE_NAME;
+    view.querySelector('[data-foot]').append(
+      make('span', { textContent: ARCHIVE.copyright }),
+      ...ARCHIVE.footerLinks.map((t) => make('span', { className: 'pl-foot-link', textContent: t })),
+    );
 
     // ── 갇히는 순간: F12 (또는 아래 폴백) ──
     let trapNow = null;
@@ -307,33 +314,12 @@ export function renderPrologue(root, { go }) {
     // 블로그에 오기 전에 이미 개발자 도구를 열어 뒀다면: 블로그를 잠깐 보여 준 뒤 갇힌다
     if (state.f12Early) wait(2500).then(() => trapNow());
 
-    // ── F12 유도: 개발자가 숨겨 둔 질문 → 주인공 독백 + 구석 안내 → (30초) 커서 근처 안내 ──
+    // ── F12 유도: 비공개 글 본문 한 줄("개발자 화면을 참조하세요") → 주인공 독백 → (30초) 커서 근처 안내 ──
+    // 본문은 처음부터 그대로 적혀 있다 (지직거리며 바뀌는 연출 없음). 화면 구석 안내도 없다.
     let lureShown = false;
     const showLure = async () => {
       if (lureShown) return;
       lureShown = true;
-      // 비공개 글의 빈 내용 상자가 지직거리다가, 개발자가 숨겨 둔 질문으로 바뀌어 한 글자씩 써진다
-      // (화면을 덮는 연출 대신 페이지 자체가 말을 거는 것처럼)
-      const box = main.querySelector('.pl-post-hidden');
-      if (box) {
-        box.classList.add('is-speaking');
-        await wait(700);
-        if (isTrapped) return;
-        const typed = make('span', { className: 'pl-typed' });
-        box.replaceChildren(make('span', { className: 'pl-post-who', textContent: devTag() }), typed);
-        for (const ch of LURE.question) {
-          if (isTrapped || !box.isConnected) return;
-          typed.textContent += ch;
-          await wait(55);
-        }
-        box.classList.add('is-done');
-      }
-      await wait(900);
-      if (isTrapped) return;
-      // 구석 안내: 지직거리며 나타난 뒤 개발자 도구를 열 때까지 남아 있다
-      const corner = $('[data-corner]');
-      corner.textContent = `${devTag()} ${LURE.corner}`;
-      corner.hidden = false;
       dialogue.play(ARCHIVE.lines.lure);
 
       const nudge = $('[data-nudge]');
@@ -361,22 +347,121 @@ export function renderPrologue(root, { go }) {
 
     const markMenu = (key) => nav.querySelectorAll('button').forEach((b) => b.setAttribute('aria-current', String(b.dataset.page === key)));
 
-    /** 검색 결과에서 누른 글 (처음 열리는 페이지) */
+    /** "[태그] 제목" (비공개 글처럼 태그가 없으면 제목만) */
+    const postTitle = (post) => (post.tag ? `[${post.tag}] ${post.title}` : post.title);
+    /** 글 목록의 글을 연다 */
+    const openPost = (post) => {
+      if (post.status === 'locked') showLockedPost();
+      else if (post.status === 'article') showArticle();
+      else showDeleted(post);
+      view.scrollTop = 0;
+    };
+
+    /** 글자 속 `백틱` 부분을 인라인 코드로 (나머지는 그냥 글자). textContent 로만 넣는다 */
+    const withInlineCode = (el, text) => {
+      text.split('`').forEach((part, i) => {
+        if (!part) return;
+        el.append(i % 2 ? make('code', { className: 'pl-inline-code', textContent: part }) : document.createTextNode(part));
+      });
+      return el;
+    };
+    /** 글 본문 조각 (content/prologue.js 의 article.blocks) */
+    const renderBlock = (block) => {
+      if (block.type === 'ol' || block.type === 'ul') {
+        const list = make(block.type, { className: 'pl-article-list' });
+        list.append(...block.items.map((t) => withInlineCode(make('li', {}), t)));
+        return list;
+      }
+      if (block.type === 'code') return make('pre', { className: 'pl-code', textContent: block.text });
+      if (block.type === 'img') {
+        // 10년 사이 외부 이미지가 사라져 깨진 그림 자리만 남았다
+        const fig = make('figure', { className: 'pl-broken-img' });
+        fig.append(make('span', { textContent: ARCHIVE.brokenImage }), make('figcaption', { textContent: block.alt }));
+        return fig;
+      }
+      if (block.type === 'h3') return make('h3', { textContent: block.text });
+      return withInlineCode(make('p', { className: 'pl-article' }), block.text);
+    };
+
+    /**
+     * 글 아래 이전 글 · 다음 글 (글 목록에서 바로 아래·위 글).
+     * 이전 글 칸은 겉으로는 평범한 링크지만 눌러도 아무 일이 없다 (과거 글로 헤매지 않고 다음 글 = 비공개 글로 가게).
+     */
+    const buildPager = (post) => {
+      const index = ARCHIVE.posts.indexOf(post);
+      const pager = make('nav', { className: 'pl-pager' });
+      const link = (target, label, cls, onClick) => {
+        if (!target) return make('span', {});
+        const b = make('button', { type: 'button', className: `pl-pager-link ${cls}` });
+        b.append(make('small', { textContent: label }), make('span', { textContent: postTitle(target) }));
+        if (onClick) b.addEventListener('click', onClick);
+        return b;
+      };
+      const newer = ARCHIVE.posts[index - 1];
+      pager.append(
+        link(ARCHIVE.posts[index + 1], `‹ ${ARCHIVE.prevLabel}`, 'is-prev', null),
+        link(newer, `${ARCHIVE.nextLabel} ›`, 'is-next', () => openPost(newer)),
+      );
+      return pager;
+    };
+
+    /** 검색 결과에서 누른 글 (처음 열리는 페이지): 제목 · 날짜 · 본문 · 이전/다음 글 · 댓글란 */
     const showArticle = () => {
       const a = ARCHIVE.article;
       setUrl(ARCHIVE.origin + a.path);
       markMenu(null);
+      const pager = buildPager(ARCHIVE.posts.find((p) => p.status === 'article'));
+      const comments = make('section', { className: 'pl-comments' });
+      comments.append(make('h4', { textContent: `${ARCHIVE.comments.title} 0` }), make('p', { className: 'pl-comments-empty', textContent: ARCHIVE.comments.empty }));
       main.replaceChildren(
-        make('h2', { textContent: a.title }),
+        make('h2', { textContent: postTitle(a) }),
         make('p', { className: 'pl-post-date', textContent: a.date }),
-        ...a.body.map((t) => make('p', { className: 'pl-article', textContent: t })),
+        ...a.blocks.map(renderBlock),
+        pager,
+        comments,
       );
+      // 끝까지 내려 이전·다음 글이 보이면 "다음 글"(비공개 글)을 누르도록 독백
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return;
+          io.disconnect();
+          onPagerSeen();
+        },
+        { root: view, threshold: 0.6 },
+      );
+      io.observe(pager);
     };
+
+    // ── 비공개 글로 이끄는 독백: 들어옴 → (안 내려가면) 스크롤 안내 → 다음 글이 보이면 눌러 보자 ──
+    let pagerSeen = false;
+    const enterDone = dialogue.play(ARCHIVE.lines.enter);
+    const onPagerSeen = () => {
+      if (pagerSeen) return;
+      pagerSeen = true;
+      // 들어올 때 독백을 끊지 않게 끝난 뒤에. 그사이 다른 페이지로 갔으면 틀지 않는다
+      enterDone.then(() => {
+        if (alive && !isTrapped && !lureShown && onArticle()) dialogue.play(ARCHIVE.lines.nextPost);
+      });
+    };
+    /** 지금 검색 결과의 그 글을 보고 있는지 */
+    const onArticle = () => main.querySelector('h2')?.textContent === postTitle(ARCHIVE.article);
+    enterDone
+      .then(() => wait(ARCHIVE.scrollHintAfterMs))
+      .then(() => {
+        // 아직 글을 끝까지 안 내렸고, 지금 그 글을 보고 있을 때만
+        if (alive && !isTrapped && !lureShown && !pagerSeen && onArticle()) dialogue.play(ARCHIVE.lines.scrollHint);
+      });
 
     /** 지워진 글: 제목만 남아 있다 */
     const showDeleted = (post) => {
       markMenu(null);
-      main.replaceChildren(make('h2', { textContent: post.title }), make('p', { className: 'pl-post-hidden', textContent: ARCHIVE.deleted }));
+      main.replaceChildren(
+        make('h2', { textContent: postTitle(post) }),
+        make('p', { className: 'pl-post-date', textContent: post.date }),
+        make('p', { className: 'pl-post-hidden', textContent: ARCHIVE.deleted }),
+        // 글 목록에서 지워진 글을 열었어도 "다음 글"로 최근 글 쪽으로 돌아갈 수 있게
+        buildPager(post),
+      );
     };
 
     /** 비공개 글: 제목만 있고 내용은 "화면에 표시되지 않습니다" → 독백 → F12 유도 */
@@ -387,51 +472,105 @@ export function renderPrologue(root, { go }) {
       main.replaceChildren(
         make('h2', { textContent: post.title }),
         make('p', { className: 'pl-post-date', textContent: `${post.date} · ${post.badge}` }),
-        make('p', { className: 'pl-post-hidden', textContent: post.body }),
+        make('p', { className: 'pl-article pl-locked-body', textContent: post.body }),
       );
       if (lureShown) return;
       dialogue.play(ARCHIVE.lines.locked);
       wait(1800).then(() => !isTrapped && showLure());
     };
 
-    /** 메뉴 페이지. 글 목록에서는 글 제목을 직접 누른다 (비공개 글 → 유도, 지워진 글 → 삭제 안내) */
-    const showPage = (key) => {
-      const page = ARCHIVE.pages[key];
-      setUrl(ARCHIVE.origin + page.path);
-      markMenu(key);
-      if (!page.posts) {
-        main.replaceChildren(make('h2', { textContent: page.title }), ...page.body.map((t) => make('p', { textContent: t })));
-        return;
-      }
+    /** 글 목록 (전체 또는 태그별). 제목을 누르면 연다 (비공개 글 → 유도, 지워진 글 → 삭제 안내) */
+    const showList = (posts, title, path, menuKey) => {
+      setUrl(ARCHIVE.origin + path);
+      markMenu(menuKey);
       printOnce('crawler'); // 크롤러의 복선
       const list = make('ul', { className: 'pl-posts' });
-      for (const post of page.posts) {
+      for (const post of posts) {
         const li = make('li', {});
-        const title = make('button', { type: 'button', className: 'pl-post-link', textContent: post.title });
-        title.addEventListener('click', () => {
-          if (post.status === 'locked') showLockedPost();
-          else if (post.status === 'article') showArticle();
-          else showDeleted(post);
-        });
-        li.append(make('span', { className: 'pl-post-date', textContent: post.date }), title);
+        const link = make('button', { type: 'button', className: 'pl-post-link', textContent: postTitle(post) });
+        link.addEventListener('click', () => openPost(post));
+        li.append(make('span', { className: 'pl-post-date', textContent: post.date }), link);
         if (post.status === 'locked') li.append(make('span', { className: 'pl-badge', textContent: ARCHIVE.lockedPost.badge }));
         list.append(li);
       }
-      main.replaceChildren(make('h2', { textContent: page.title }), list);
+      main.replaceChildren(make('h2', { textContent: title }), list);
+      view.scrollTop = 0;
+    };
+    const showAll = () => showList(ARCHIVE.posts, ARCHIVE.postsTitle, '/', 'posts');
+    const showTag = (tag) =>
+      showList(
+        ARCHIVE.posts.filter((p) => p.tag === tag),
+        ARCHIVE.tagPageTitle(tag),
+        `/category/${tag}`, // 주소창에 보여 주기만 하는 글자라 인코딩하지 않는다
+        'tags',
+      );
+    /**
+     * 분류 목록 (2016년 한국 블로그식): "분류 전체보기 (n)" 아래에 분류마다 "이름 (글 수)".
+     * 옆줄과 Category 페이지가 같이 쓴다. 글 수는 지워진 글까지 센 값이라 화면에 남은 글보다 많다.
+     */
+    const categoryList = () => {
+      const total = ARCHIVE.tags.reduce((sum, t) => sum + t.count, 0);
+      const all = make('button', { type: 'button', className: 'pl-cat-all', textContent: `${ARCHIVE.sidebar.tagsTitle} (${total})` });
+      all.addEventListener('click', showAll);
+      const list = make('ul', { className: 'pl-cats' });
+      for (const { name, count } of ARCHIVE.tags) {
+        const b = make('button', { type: 'button', className: 'pl-cat', textContent: `${name} (${count})` });
+        b.addEventListener('click', () => showTag(name));
+        const li = make('li', {});
+        li.append(b);
+        list.append(li);
+      }
+      const box = make('div', { className: 'pl-cat-box' });
+      box.append(all, list);
+      return box;
+    };
+    const showTags = () => {
+      setUrl(`${ARCHIVE.origin}/category`);
+      markMenu('tags');
+      main.replaceChildren(make('h2', { textContent: ARCHIVE.menu.tags }), categoryList());
+    };
+    const showNotFound = () => {
+      setUrl(`${ARCHIVE.origin}/guestbook`);
+      markMenu('guestbook');
+      main.replaceChildren(make('h2', { textContent: ARCHIVE.notFound.title }), make('p', { textContent: ARCHIVE.notFound.body }));
     };
 
-    for (const [key, page] of Object.entries(ARCHIVE.pages)) {
-      const b = make('button', { type: 'button', textContent: page.menu });
+    // 메뉴
+    const menuActions = { posts: showAll, tags: showTags, guestbook: showNotFound };
+    for (const [key, label] of Object.entries(ARCHIVE.menu)) {
+      const b = make('button', { type: 'button', textContent: label });
       b.dataset.page = key;
-      b.addEventListener('click', () => showPage(key));
+      b.addEventListener('click', () => menuActions[key]?.());
       nav.append(b);
     }
+    view.querySelector('[data-logo]').addEventListener('click', showAll);
+
+    // 옆줄: 프로필 · 분류 · 지난 글 · 방문자 수
+    const side = view.querySelector('[data-side]');
+    const section = (title, ...children) => {
+      const s = make('section', { className: 'pl-side-box' });
+      if (title) s.append(make('h4', { textContent: title }));
+      s.append(...children);
+      return s;
+    };
+    const profile = make('div', { className: 'pl-profile' });
+    profile.append(make('span', { className: 'pl-avatar' }), make('strong', { textContent: ARCHIVE.sidebar.profileName }));
+    const months = make('ul', { className: 'pl-months' });
+    months.append(...ARCHIVE.months.map((m) => make('li', { textContent: `${m.label} (${m.count})` })));
+    const { today, total } = ARCHIVE.sidebar.visitors;
+    const counter = make('p', { className: 'pl-counter' });
+    counter.append(make('span', { textContent: `TODAY ${today}` }), make('span', { textContent: `TOTAL ${total.toLocaleString('en-US')}` }));
+    side.append(
+      section(null, profile),
+      section(null, categoryList()),
+      section(ARCHIVE.sidebar.monthsTitle, months),
+      section(null, counter),
+    );
+
     showArticle();
-    dialogue.play(ARCHIVE.lines.enter);
 
     await f12Pressed;
     if (!alive) return;
-    $('[data-corner]').hidden = true;
     $('[data-nudge]').hidden = true;
     dialogue.skip();
     glitch();

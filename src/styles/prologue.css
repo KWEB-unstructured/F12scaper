@@ -228,8 +228,7 @@
   color: #1d2329;
   font: inherit;
 }
-.pl-searchbar button,
-.pl-site button {
+.pl-searchbar button {
   padding: 2px 10px;
   border: 1px solid #b8c0c9;
   border-radius: 4px;
@@ -259,60 +258,187 @@
   color: #6b2fa0;
 }
 
-/* THE ARCHIVE — 평범한 척하는 사이트 */
+/* THE ARCHIVE — 2014~2016 한 개발자가 직접 만든 정적 블로그. 2016년식 플랫 디자인.
+   경계선 없이 단색 면으로만 나눈다: 검은 머리 막대 / 흰 본문 + 회색 옆줄 / 회색 바닥 막대.
+   색은 그 시절 어디에나 있던 기본 테마 색 그대로 (푸른 기 없는 회색, 검은 메뉴 바, 기본 파란 링크, 분홍 인라인 코드).
+   일부러 다듬지 않은 색이라 2016년의 촌스러움이 난다. 글꼴은 나눔고딕(index.html 에서 불러옴).
+   게임 화면 가운데 영역도 이 모습을 이어 쓸 예정이라 색은 여기 한 곳에 모아 둔다. */
 .pl-site {
+  --blog-bg: #fff;
+  --blog-fg: #333;
+  --blog-muted: #777;
+  --blog-bar: #222;
+  --blog-bar-fg: #9d9d9d;
+  --blog-soft: #eee;
+  --blog-link: #337ab7;
+  --blog-link-hover: #23527c;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  background: #f4f1ea;
-  font-family: Georgia, 'Times New Roman', serif;
+  gap: 16px;
+  padding: 0;
+  background: var(--blog-bg);
+  color: var(--blog-fg);
+  font-family: 'Nanum Gothic', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
 }
+.pl-site button {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* 머리 막대: 사이트 이름 + 메뉴 */
 .pl-site-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding-bottom: 6px;
-  border-bottom: 2px solid #2c2a26;
+  padding: 10px 16px;
+  background: var(--blog-bar);
+  color: var(--blog-bar-fg);
 }
-.pl-logo {
-  letter-spacing: 0.15em;
+.pl-site .pl-logo {
+  font-size: 1.2em;
+  font-weight: 800;
+  color: #fff;
 }
 .pl-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 16px;
 }
-.pl-nav button[aria-current='true'] {
-  background: #2c2a26;
-  border-color: #2c2a26;
-  color: #f4f1ea;
+.pl-site .pl-nav button:hover,
+.pl-site .pl-nav button[aria-current='true'] {
+  color: #fff;
 }
-.pl-site-main {
+
+.pl-site-body {
   flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 24%);
+  gap: 24px;
+  align-items: start;
+  padding: 0 16px;
+}
+
+/* 본문 */
+.pl-site-main {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
+  min-width: 0;
 }
 .pl-site-main h2 {
-  font-size: 1.3em;
+  font-size: 1.4em;
+  font-weight: 800;
+  line-height: 1.35;
 }
-.pl-open {
-  margin-top: 8px;
+.pl-site-main h3 {
+  margin-top: 14px;
+  font-size: 1.08em;
+  font-weight: 800;
 }
-/* 검색 결과에서 연 글 본문 */
 .pl-article {
+  max-width: 68ch;
+  line-height: 1.7;
+}
+.pl-article-list {
+  margin: 0;
+  padding-left: 1.4em;
+  line-height: 1.7;
+}
+/* 인라인 코드: 그 시절 기본 테마의 분홍 글씨 */
+.pl-inline-code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #f9f2f4;
+  color: #c7254e;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+.pl-code {
+  align-self: stretch;
+  margin: 4px 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  background: var(--blog-soft);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  line-height: 1.45;
+  white-space: pre;
+}
+/* 10년 사이 사라진 외부 이미지 자리 */
+.pl-broken-img {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 70px;
+  margin: 4px 0;
+  background: var(--blog-soft);
+  color: var(--blog-muted);
+  font-size: 0.85em;
+}
+.pl-broken-img span::before {
+  content: '▨ ';
+}
+.pl-broken-img figcaption {
+  font-size: 0.9em;
+}
+/* 이전 글 · 다음 글: 옅은 회색 면 두 칸 */
+.pl-pager {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 18px;
+}
+.pl-site .pl-pager-link {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  background: var(--blog-soft);
+  text-align: left;
+}
+.pl-site .pl-pager-link.is-next {
+  grid-column: 2;
+  align-items: flex-end;
+  text-align: right;
+}
+.pl-pager-link small {
+  color: var(--blog-muted);
+}
+.pl-pager-link span {
+  color: var(--blog-link);
+}
+/* 댓글란 (비어 있다) */
+.pl-comments {
+  align-self: stretch;
+  margin-top: 16px;
+}
+.pl-comments h4 {
+  font-weight: 800;
+}
+.pl-comments-empty {
   margin-top: 6px;
-  max-width: 62ch;
+  padding: 12px;
+  background: var(--blog-soft);
+  color: var(--blog-muted);
+  font-size: 0.9em;
 }
 /* 글 목록: 날짜 + 제목(누를 수 있음) + 비공개 표시 */
 .pl-posts {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 4px 0 0;
+  gap: 6px;
+  margin: 6px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -320,81 +446,128 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 10px;
+  gap: 4px 12px;
 }
 .pl-site .pl-post-link {
+  color: var(--blog-link);
+  text-align: left;
+}
+.pl-site .pl-post-link:hover,
+.pl-site .pl-pager-link:hover span {
+  color: var(--blog-link-hover);
+  text-decoration: underline;
+}
+/* 회색 이름표 (흰 글씨) */
+.pl-badge {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #777;
+  color: #fff;
+  font-size: 0.75em;
+  font-weight: 700;
+}
+.pl-post-date {
+  color: var(--blog-muted);
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+/* 비공개 글·지워진 글: 내용 자리가 비어 있다 */
+.pl-post-hidden {
+  align-self: stretch;
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--blog-soft);
+  color: var(--blog-muted);
+}
+
+/* 옆줄: 옅은 회색 면 하나에 프로필 · 분류 · 지난 글 · 방문자 수 */
+.pl-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+  background: var(--blog-soft);
+  font-size: 0.88em;
+}
+.pl-side-box h4 {
+  margin: 0 0 6px;
+  font-size: 1em;
+  font-weight: 800;
+}
+.pl-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* 기본 프로필 그림 (사람 모양 실루엣) */
+.pl-avatar {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 38%, #bbb 0 22%, transparent 23%),
+    radial-gradient(ellipse at 50% 100%, #bbb 0 45%, transparent 46%),
+    #ddd;
+}
+/* 분류 목록: "분류 전체보기 (n)" 아래 들여 쓴 분류들 */
+.pl-cat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.pl-site .pl-cat-all {
+  font-weight: 800;
+}
+.pl-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0 0 0 10px;
+  list-style: none;
+}
+.pl-cats li::before {
+  content: '- ';
+  color: var(--blog-muted);
+}
+.pl-site .pl-cat {
+  color: #555;
+}
+.pl-site .pl-cat:hover,
+.pl-site .pl-cat-all:hover {
+  color: var(--blog-link-hover);
+  text-decoration: underline;
+}
+.pl-months {
+  margin: 0;
   padding: 0;
-  border: 0;
-  background: none;
-  color: #2c2a26;
+  list-style: none;
+  color: var(--blog-muted);
+  line-height: 1.6;
+}
+.pl-counter {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--blog-muted);
+}
+
+/* 바닥 막대 */
+.pl-site-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--blog-soft);
+  font-size: 0.85em;
+  color: var(--blog-muted);
+}
+.pl-foot-link {
   text-decoration: underline;
   text-underline-offset: 2px;
-  cursor: pointer;
-}
-.pl-badge {
-  padding: 0 6px;
-  border: 1px solid #b08a52;
-  border-radius: 3px;
-  color: #8a6a3c;
-  font-size: 0.8em;
-}
-/* 비공개 글: 내용 자리가 비어 있는 것처럼 보인다 */
-.pl-post-date {
-  color: #8a8478;
-  font-size: 0.85em;
-}
-.pl-post-hidden {
-  margin-top: 8px;
-  padding: 10px 12px;
-  border: 1px dashed #c9c2b4;
-  color: #8a8478;
-}
-/* 빈 내용 상자가 지직거리다가 개발자가 숨겨 둔 질문으로 바뀌어 써진다 (페이지가 말을 거는 느낌) */
-.pl-post-hidden.is-speaking {
-  border-style: solid;
-  border-color: #6b9fd4;
-  background: #eef4fb;
-  color: #1f4f86;
-  font-family: var(--font-mono);
-  animation: pl-box-jitter 0.7s steps(2) both;
-}
-@keyframes pl-box-jitter {
-  0%,
-  100% {
-    transform: none;
-    filter: none;
-  }
-  25% {
-    transform: translate(-2px, 1px);
-    filter: hue-rotate(60deg) contrast(1.4);
-  }
-  50% {
-    transform: translate(2px, -1px);
-    opacity: 0.4;
-  }
-  75% {
-    transform: translate(-1px, 0);
-  }
-}
-.pl-post-who {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 0.8em;
-  color: #4a7fb8;
-}
-/* 써지는 동안 깜박이는 커서 */
-.pl-typed::after {
-  content: '▌';
-  margin-left: 1px;
-  animation: blink 0.9s steps(1) infinite;
-}
-.pl-post-hidden.is-done .pl-typed::after {
-  content: '';
-}
-.pl-site-foot {
-  font-size: 0.85em;
-  color: #8a8478;
-  font-style: italic;
 }
 
 /* ── 글리치 ── */
@@ -655,7 +828,6 @@
   color: #f2f2f2;
   pointer-events: none;
 }
-.pl-corner,
 .pl-nudge {
   z-index: 4;
 }
@@ -690,45 +862,6 @@
   font-weight: 700;
   animation: pl-glitch 0.2s steps(2) 6;
 }
-/* 구석 안내: 지직거리며 나타난 뒤(약 1.2초) 은은하게 깜빡이며 남는다. 개발자 도구를 열면 숨긴다 */
-.pl-corner {
-  position: absolute;
-  right: 4vw;
-  top: 8vh;
-  margin: 0;
-  padding: 0.5em 0.9em;
-  border: 1px solid rgb(124 196 255 / 0.6);
-  border-radius: var(--radius);
-  background: rgb(6 14 24 / 0.82);
-  color: var(--unknown);
-  font-size: clamp(1.1rem, 2.2vw, 1.6rem);
-  font-weight: 700;
-  text-shadow: 0 0 10px rgb(124 196 255 / 0.7);
-  box-shadow: 0 0 28px rgb(124 196 255 / 0.25);
-  animation:
-    pl-corner-in 1.2s steps(1) both,
-    pl-corner-pulse 2s ease-in-out 1.2s infinite;
-}
-@keyframes pl-corner-in {
-  0%,
-  20%,
-  45%,
-  70% {
-    opacity: 0;
-  }
-  10%,
-  30%,
-  55%,
-  80%,
-  100% {
-    opacity: 1;
-  }
-}
-@keyframes pl-corner-pulse {
-  50% {
-    opacity: 0.55;
-  }
-}
 /* 커서 근처 작은 안내 */
 .pl-nudge {
   position: fixed;
@@ -761,7 +894,7 @@
   position: absolute;
   left: 50%;
   bottom: var(--space-5);
-  z-index: 6; /* 질문 오버레이·구석 안내보다 위 */
+  z-index: 6; /* 질문 오버레이·커서 안내보다 위 */
   width: min(880px, calc(100% - 32px));
   transform: translateX(-50%);
 }
@@ -772,9 +905,6 @@
   }
   .pl-screen.is-glitch,
   .pl-escape,
-  .pl-corner,
-  .pl-post-hidden.is-speaking,
-  .pl-typed::after,
   .pl-void p,
   .pl-browser.is-opening,
   .pl-chip.is-new {
