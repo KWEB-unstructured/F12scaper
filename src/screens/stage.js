@@ -10,6 +10,7 @@
 //     .dlg          단계를 처음 시작할 때 시작 대사를 대사창으로 (ui/dialogue.js)
 //     .game-toast   크롤러 경고 (입력창 위에서 떠올랐다 사라짐) + 화면 가장자리 붉게
 //     (8단계)       입력창 없음. 콘솔 fetch('/system/terminate') 를 감싸 결과를 받는다 (screens/terminate-fetch.js)
+//     크롤러 흔적  단계에 들어올 때 콘솔 로그, 통과 직후 고쳐 둔 퍼즐 화면 되돌리기 (content/crawler.js · 결정 4)
 //     .il           이야기 장면 (ui/interlude.js). 단계 통과 뒤 'after-N', 4단계 반전 'reveal' 등을 화면 전체에 덮어 튼다
 //
 // 화자 이름·진행률 라벨·문구는 content/ 데이터 파일에서 읽는다. 대사·힌트는 textContent 로만 넣는다.
@@ -37,6 +38,8 @@ import { INTERLUDES, afterStage } from '../content/interludes.js';
 import { confirmModal } from '../ui/modal.js';
 import { isRevealed, clearScenes, loadScenes, beginScene, endScene, markRevealed } from './scenes-state.js';
 import { installTerminateFetch } from './terminate-fetch.js';
+import { REVERT_STAGES, revertLog, tracesUpTo } from '../content/crawler.js';
+import { printCrawler } from '../ui/console-log.js';
 
 /** 모을 수 있는 인증 키 조각 수 (1~7단계에서 하나씩, 8단계는 조합) */
 const TOTAL_PIECES = TOTAL_STAGES - 1;
@@ -367,14 +370,35 @@ export function renderStage(root, { go }) {
       );
     });
 
+  // ── 크롤러 흔적 A: 통과 직후, 플레이어가 고쳐 둔 퍼즐 화면을 처음 모습으로 되돌린다 (2026-11-24 결정 4) ──
+  // 퍼즐을 푸는 도중에는 절대 되돌리지 않는다. 처음 모습은 mount 직후에 찍어 둔다(아래 puzzleSnapshot).
+  const REVERT_GLITCH_MS = 650;
+  const REVERT_HOLD_MS = 350;
+  /** @type {string | null} */
+  let puzzleSnapshot = null;
+  const wait = (ms) => new Promise((r) => clearTimers.push(setTimeout(r, ms)));
+  const revertPuzzle = async () => {
+    const puzzle = $('[data-puzzle]');
+    if (puzzleSnapshot === null || puzzle.innerHTML === puzzleSnapshot) return;
+    form.answer.disabled = true;
+    hintBtn.disabled = true;
+    puzzle.classList.add('is-reverting');
+    await wait(REVERT_GLITCH_MS);
+    puzzle.innerHTML = puzzleSnapshot;
+    printCrawler([revertLog(stage.id)]);
+    await wait(REVERT_HOLD_MS);
+    puzzle.classList.remove('is-reverting');
+  };
+
   const solve = (fragment) => {
     if (solved) return;
     solved = true;
     const from = piecesOf(p.stage);
     completeStage(p, fragment);
     const final = isFinished(p);
-    // 통과 연출 → 이 단계 뒤 이야기 장면(있으면) → 다음 단계
-    playClear(from, piecesOf(p.stage), final)
+    // (고친 화면이 있으면 크롤러가 되돌림) → 통과 연출 → 이 단계 뒤 이야기 장면(있으면) → 다음 단계
+    revertPuzzle()
+      .then(() => playClear(from, piecesOf(p.stage), final))
       .then(() => playScene(afterStage(stage.id)))
       .then(() => {
         if (!destroyed) go('stage');
@@ -393,6 +417,10 @@ export function renderStage(root, { go }) {
     if (count === WRONG_BEFORE_HINT_SUGGEST && !p.hints[p.stage]) say(HINT_SUGGEST);
   };
 
+  // ── 크롤러 흔적 B: 단계에 들어올 때마다 콘솔에 크롤러 로그. 단계가 갈수록 줄이 늘어난다 ──
+  // 단계의 자체 콘솔 로그(3단계 등)보다 먼저 찍는다
+  printCrawler(tracesUpTo(stage.id));
+
   const stageCleanup = stage.mount($('[data-puzzle]'), {
     complete: solve,
     verify: (input) => checkAnswer(stage, input),
@@ -401,6 +429,8 @@ export function renderStage(root, { go }) {
     fragments: Object.freeze({ ...p.fragments }),
     playScene,
   });
+
+  if (REVERT_STAGES.includes(stage.id)) puzzleSnapshot = $('[data-puzzle]').innerHTML;
 
   form.hidden = stage.input === false;
   form.addEventListener('animationend', () => form.classList.remove('wrong'));

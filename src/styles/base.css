@@ -1274,3 +1274,53 @@ tr.mine {
     box-shadow: inset 0 0 90px 6px rgb(95 211 141 / 0.22);
   }
 }
+
+/* ── 크롤러 흔적: 통과 직후 고쳐 둔 퍼즐 화면을 되돌릴 때 (screens/stage.js revertPuzzle) ──
+   퍼즐 영역이 붉게 지직거리다가 원래 모습으로 돌아간다. 0.65초 + 원래대로 0.35초 */
+.puzzle.is-reverting {
+  position: relative;
+  animation: puzzle-revert 0.65s steps(2) both;
+}
+.puzzle.is-reverting::after {
+  content: '[crawler] 복구 중…';
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-4);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: rgb(40 8 8 / 0.85);
+  color: var(--danger);
+  font-size: var(--fs-sm);
+}
+@keyframes puzzle-revert {
+  0% {
+    filter: none;
+    transform: none;
+  }
+  20% {
+    filter: hue-rotate(-40deg) saturate(3) contrast(1.4);
+    transform: translateX(-4px) skewX(2deg);
+  }
+  40% {
+    filter: brightness(1.6) saturate(0);
+    transform: translateX(5px);
+  }
+  60% {
+    filter: hue-rotate(-40deg) saturate(3);
+    transform: translateX(-2px) skewX(-3deg);
+  }
+  80% {
+    filter: blur(1px) brightness(0.6);
+    transform: translateX(2px);
+  }
+  100% {
+    filter: none;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .puzzle.is-reverting {
+    animation: none;
+  }
+}

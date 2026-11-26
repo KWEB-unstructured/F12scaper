@@ -18,3 +18,11 @@ export function printConsole(key) {
   const pad = ' '.repeat((msg.tag?.length ?? 0) + 1);
   console.log(`%c${msg.tag ? `${msg.tag} ` : ''}${msg.lines.join(`\n${pad}`)}`, style);
 }
+
+/**
+ * 크롤러 로그를 콘솔에 찍는다 (회색, 줄마다 [crawler] 태그). 단계 화면의 크롤러 흔적용 (content/crawler.js)
+ * @param {string[]} lines
+ */
+export function printCrawler(lines) {
+  lines.forEach((line) => console.log(`%c[crawler] ${line}`, CONSOLE_STYLES.crawler));
+}

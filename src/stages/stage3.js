@@ -5,14 +5,17 @@
 // 퍼즐: 열쇠는 탭 제목(document.title)에 거꾸로 적혀 있다. 콘솔 로그가 unlock() 의 존재와
 // "열쇠는 이 페이지의 이름 속에 있다"는 것을 알려 준다. 튜토리얼(★★)이라 꼬임은 뒤집기 하나만 둔다.
 
+import { CONSOLE_STYLES } from '../content/console-messages.js';
+
 const ORIGINAL_TITLE = document.title;
 
 // 탭 제목에 들어갈 열쇠 (퍼즐 안에 숨긴 원문이라 커밋 예외. CLAUDE.md 규칙 7)
 const REVERSED_KEY = 'latrop';
 const PUZZLE_TITLE = `무료 과제 자료실 · ${REVERSED_KEY}`;
 
-const LOG_SYSTEM = 'color:#2a7a2a';
-const LOG_SPIDER = 'color:#888;font-style:italic';
+// 콘솔 로그 화자는 크롤러 (2026-11-24 결정 2-2). 색은 프롤로그·크롤러 흔적(content/crawler.js)과 같은 회색
+// TODO(형씨): 정씨가 [보안시스템]·[spider] 를 [crawler] 로 통일했다. 문구 다듬기
+const LOG_CRAWLER = CONSOLE_STYLES.crawler;
 
 /** @type {import('./types.js').Stage} */
 export default {
@@ -39,24 +42,23 @@ export default {
       <p class="puzzle-text">문 위에 작은 글씨: <q>열쇠는 거울 속에 있다.</q></p>
     `;
 
-    console.log('%c[보안시스템] 출입 잠금 상태입니다.', LOG_SYSTEM);
-    console.log('%c[보안시스템] 관리용 함수 unlock(key) 가 아직 제거되지 않았습니다.', LOG_SYSTEM);
-    console.log('%c[보안시스템] key 는 이 페이지의 이름에 보관되어 있습니다.', LOG_SYSTEM);
+    console.log('%c[crawler] 출입 잠금 상태입니다.', LOG_CRAWLER);
+    console.log('%c[crawler] 관리용 함수 unlock(key) 가 아직 제거되지 않았습니다.', LOG_CRAWLER);
+    console.log('%c[crawler] key 는 이 페이지의 이름에 보관되어 있습니다.', LOG_CRAWLER);
 
     window.unlock = async (key) => {
       if (key === undefined) {
-        console.warn('[보안시스템] unlock("열쇠") 처럼 열쇠를 넣어 주십시오.');
+        console.warn('[crawler] unlock("열쇠") 처럼 열쇠를 넣어 주십시오.');
         return;
       }
       if (await ctx.verify(String(key))) {
-        console.log('%c[보안시스템] 잠금 해제. 손님의 이동을 기록합니다.', LOG_SYSTEM);
-        // 거미의 첫 흔적 (스토리 복선)
-        console.log('%c[spider] visitor 수집 완료. 전달 대기 중.', LOG_SPIDER);
+        console.log('%c[crawler] 잠금 해제. 방문자의 이동을 기록합니다.', LOG_CRAWLER);
+        console.log('%c[crawler] visitor 2 수집 완료. 전달 대기 중.', LOG_CRAWLER);
         ctx.complete(String(key));
       } else if (String(key).trim().toLowerCase() === REVERSED_KEY) {
-        console.warn('[보안시스템] 열쇠가 뒤집혀 있습니다.');
+        console.warn('[crawler] 열쇠가 뒤집혀 있습니다.');
       } else {
-        console.warn('[보안시스템] 등록되지 않은 열쇠입니다. 비정상 접근으로 기록됩니다.');
+        console.warn('[crawler] 등록되지 않은 열쇠입니다. 비정상 접근으로 기록됩니다.');
       }
     };
 
