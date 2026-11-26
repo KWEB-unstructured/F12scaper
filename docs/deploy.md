@@ -54,7 +54,7 @@ DB 는 Production 과 Preview 가 같은 프로젝트를 쓴다. 한 번만 하�
 | `https://f12scaper.vercel.app/api/stage5` | 403, 본문에 `maintenance` |
 | `https://f12scaper.vercel.app/system/terminate` (브라우저 주소창 = GET) | 405 `method_not_allowed` (rewrite 가 동작한다는 뜻. 404 면 vercel.json 이 적용 안 된 것) |
 | Vercel → Settings → Cron Jobs | `/api/ranking` 이 보임 |
-| 실제로 한 판 (시작 → 8단계 → 클리어 → 랭킹) | Supabase 의 `sessions`·`rankings` 에 줄이 생기고 랭킹 화면에 보인다. 1분 안에 깨면 `rankings` 에는 없다 |
+| 실제로 한 판 (시작 → 8단계 → 클리어 → 랭킹) | Supabase 의 `sessions`·`rankings` 에 줄이 생기고 랭킹 화면에 보인다. 5분 안에 깨면 `rankings` 에는 없다 |
 
 ## 5. 위조 요청 테스트
 

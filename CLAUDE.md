@@ -10,7 +10,7 @@
 
 ## 명령
 - `npm run dev` — Vite 개발 서버. `/api/*` 도 vite.config.js 의 플러그인이 같이 띄운다 (Vercel 로그인 불필요)
-- `npm run build` — 프로덕션 빌드 (소스맵 포함)
+- `npm run build` — 프로덕션 빌드 (소스맵 없음. Sources 에서 읽힐 퍼즐 코드는 `public/stages/`)
 - `npm run hash -- "정답"` — stageN.js 의 answerHash 값 만들기
 - `.env.local` 이 없으면 API 는 mock 응답을 준다. 임시 정답은 `test1` ~ `test8`
 
