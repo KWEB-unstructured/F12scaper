@@ -438,8 +438,10 @@ export function renderStage(root, { go }) {
   if (stage.verify === 'terminate') {
     restoreFetch = installTerminateFetch({
       extra: () => {
-        const { answer, ...rest } = getVerifyPayload(p, '');
-        return rest;
+        // 기록용 필드만 골라 넘긴다. 나머지(...rest)를 넘기면 getVerifyPayload 의 정답 필드 이름이 answer → key 로
+        // 바뀌었을 때 빈 key 가 플레이어의 key 를 덮어써서 항상 오답이 된다
+        const { sessionId, hints, stageTimes } = getVerifyPayload(p, '');
+        return { sessionId, hints, stageTimes };
       },
       onResult: ({ status, data }) => {
         if (solved || destroyed) return;
