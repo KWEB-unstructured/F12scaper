@@ -521,6 +521,16 @@ input:focus {
     radial-gradient(ellipse at 50% 30%, #121a24 0%, #06080b 70%);
 }
 
+/* 화면이 바뀔 때(프롤로그 → 1단계, 단계 통과 뒤) 어둠에서 서서히 밝아진다 */
+.game {
+  animation: game-in 0.6s ease-out both;
+}
+@keyframes game-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* ── 상단 HUD ── */
 .hud {
   display: flex;
@@ -904,6 +914,27 @@ input:focus {
 .dlg.typing .dlg-next {
   visibility: hidden;
 }
+/* 말하다가 지지직 끊긴다 (프롤로그에서 화면 속으로 빨려 들 때) */
+.dlg.is-cut {
+  animation: dlg-cut 0.25s steps(2) both;
+}
+@keyframes dlg-cut {
+  0% {
+    transform: translateX(-50%);
+  }
+  30% {
+    transform: translateX(calc(-50% - 6px));
+    clip-path: inset(10% 0 45% 0);
+  }
+  60% {
+    transform: translateX(calc(-50% + 5px));
+    clip-path: inset(50% 0 5% 0);
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+  }
+}
 .dlg-skip {
   position: absolute;
   top: var(--space-2);
@@ -1230,6 +1261,7 @@ tr.mine {
   .game-toast.is-new,
   .alert-edge.is-on,
   .modal-box,
+  .game,
   .clear-fx,
   .clear-title,
   .clear-pips i.new,

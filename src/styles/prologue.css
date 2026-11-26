@@ -20,6 +20,8 @@
   /* 줌인 배율: 모니터가 화면 너비 80% 또는 높이 70% 를 채울 때까지 */
   --zoom: min(calc(80 / var(--monitor-w)), calc(70 / var(--monitor-h)));
   --zoom-ms: 1400ms;
+  /* 소용돌이치며 빨려 드는 시간 (screens/prologue.js 의 SUCK_MS 와 맞춘다) */
+  --suck: 2.4s;
 
   position: fixed;
   inset: 0;
@@ -156,6 +158,17 @@
   flex-direction: column;
   height: 100%;
 }
+/* 바탕화면에서 브라우저 창이 열리듯 커지며 나타난다 */
+.pl-browser.is-opening {
+  transform-origin: 8% 8%;
+  animation: pl-open-window 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes pl-open-window {
+  from {
+    opacity: 0;
+    transform: scale(0.25);
+  }
+}
 .pl-chrome {
   display: flex;
   align-items: center;
@@ -289,6 +302,95 @@
 .pl-open {
   margin-top: 8px;
 }
+/* 검색 결과에서 연 글 본문 */
+.pl-article {
+  margin-top: 6px;
+  max-width: 62ch;
+}
+/* 글 목록: 날짜 + 제목(누를 수 있음) + 비공개 표시 */
+.pl-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pl-posts li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.pl-site .pl-post-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #2c2a26;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.pl-badge {
+  padding: 0 6px;
+  border: 1px solid #b08a52;
+  border-radius: 3px;
+  color: #8a6a3c;
+  font-size: 0.8em;
+}
+/* 비공개 글: 내용 자리가 비어 있는 것처럼 보인다 */
+.pl-post-date {
+  color: #8a8478;
+  font-size: 0.85em;
+}
+.pl-post-hidden {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px dashed #c9c2b4;
+  color: #8a8478;
+}
+/* 빈 내용 상자가 지직거리다가 개발자가 숨겨 둔 질문으로 바뀌어 써진다 (페이지가 말을 거는 느낌) */
+.pl-post-hidden.is-speaking {
+  border-style: solid;
+  border-color: #6b9fd4;
+  background: #eef4fb;
+  color: #1f4f86;
+  font-family: var(--font-mono);
+  animation: pl-box-jitter 0.7s steps(2) both;
+}
+@keyframes pl-box-jitter {
+  0%,
+  100% {
+    transform: none;
+    filter: none;
+  }
+  25% {
+    transform: translate(-2px, 1px);
+    filter: hue-rotate(60deg) contrast(1.4);
+  }
+  50% {
+    transform: translate(2px, -1px);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translate(-1px, 0);
+  }
+}
+.pl-post-who {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.8em;
+  color: #4a7fb8;
+}
+/* 써지는 동안 깜박이는 커서 */
+.pl-typed::after {
+  content: '▌';
+  margin-left: 1px;
+  animation: blink 0.9s steps(1) infinite;
+}
+.pl-post-hidden.is-done .pl-typed::after {
+  content: '';
+}
 .pl-site-foot {
   font-size: 0.85em;
   color: #8a8478;
@@ -341,7 +443,183 @@
 .pl-void p {
   animation: pl-appear 0.4s steps(3) both;
 }
-/* 갇힌 뒤: 상태 문구는 아래로 내려 가운데 연출 문구와 겹치지 않게 한다 */
+/* 갇힌 뒤: 말 거는 내용은 콘솔에만 있다. 화면은 검은 채로 둔다 (끝에 "연결을 시도하는 중…" 만 가운데) */
+.pl-void.is-trapped {
+  justify-content: center;
+  text-shadow: none;
+}
+.pl-chip {
+  position: absolute;
+  top: 8vh;
+  right: 4vw;
+  z-index: 4;
+  margin: 0;
+  padding: 0.35em 0.8em;
+  border: 1px solid rgb(124 196 255 / 0.5);
+  border-radius: 999px;
+  background: rgb(6 14 24 / 0.85);
+  color: var(--unknown);
+  font-size: var(--fs-sm);
+}
+.pl-chip::before {
+  content: '● ';
+  color: var(--danger);
+}
+.pl-chip.is-new {
+  animation: pl-chip-pop 0.5s ease-out;
+}
+@keyframes pl-chip-pop {
+  40% {
+    transform: scale(1.12);
+    box-shadow: 0 0 18px rgb(124 196 255 / 0.5);
+  }
+}
+/* ── 화면 속으로 빨려 듦 (glitch 장면, screens/prologue.js 의 SUCK_MS·BLACKOUT_MS 와 맞춘다) ──
+   처음엔 천천히, 끝으로 갈수록 빨라지는 줌 + 도서관이 모니터 쪽으로 늘어나며 흐려짐
+   + 가장자리부터 좁혀 드는 어둠(터널) + 마지막 순간 흔들림 → 암전 → 어둠이 가운데부터 걷힘 */
+.prologue.is-sucking .pl-world,
+.prologue.is-sucking .pl-monitor {
+  transition-duration: var(--suck);
+  transition-timing-function: cubic-bezier(0.7, 0, 0.95, 0.45);
+}
+.prologue.is-sucking .pl-bg {
+  transform: scale(1.5);
+  filter: brightness(0.75) blur(2px);
+  /* 회오리 잔상이 보이도록 배경은 끝 무렵에야 사라진다 */
+  transition:
+    transform var(--suck) cubic-bezier(0.7, 0, 0.95, 0.45),
+    filter var(--suck) ease-in,
+    opacity 0.4s ease-in calc(var(--suck) - 0.4s);
+}
+.prologue.is-sucking .pl-monitor {
+  animation: pl-pull-shake 0.3s linear calc(var(--suck) - 0.3s) 1;
+}
+
+/* 회오리: 도서관 전체가 모니터 중심을 축으로 점점 빠르게 돈다.
+   transform 은 줌 전환이 쓰고 있으므로 따로 쓰는 rotate 속성으로 돌린다 (둘이 합쳐진다) */
+.prologue.is-sucking .pl-world {
+  animation: pl-spin var(--suck) cubic-bezier(0.6, 0, 1, 0.6) forwards;
+}
+@keyframes pl-spin {
+  to {
+    rotate: 420deg;
+  }
+}
+
+/* 회오리 블러: 배경 복사본 8장을 조금씩 더 크게, 더 돌려서 반투명하게 겹친다
+   → 모니터를 중심으로 소용돌이치며 번지는 잔상 (CSS 에는 방사형 블러 필터가 없어서 이렇게 흉내 낸다).
+   --swirl 이 0 이면 복사본이 원본과 딱 겹쳐 보이지 않고, 1 까지 커지면서 잔상이 벌어진다 */
+@property --swirl {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+.pl-bg > i {
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  opacity: 0;
+  transform-origin: calc((var(--monitor-x) + var(--monitor-w) / 2) * 1%) calc((var(--monitor-y) + var(--monitor-h) / 2) * 1%);
+  transform: rotate(calc(var(--swirl) * var(--k) * -6deg)) scale(calc(1 + var(--swirl) * var(--k) * 0.09));
+}
+.prologue.is-sucking .pl-bg {
+  animation: pl-swirl var(--suck) cubic-bezier(0.5, 0, 0.9, 0.5) forwards;
+}
+.prologue.is-sucking .pl-bg > i {
+  opacity: calc(0.62 - var(--k) * 0.05);
+}
+@keyframes pl-swirl {
+  to {
+    --swirl: 1;
+  }
+}
+
+/* 속도선: 모니터 쪽으로 빨려 드는 빛줄기. 가운데(모니터)는 비우고 바깥만 보인다 */
+.pl-streaks {
+  position: absolute;
+  inset: -50%;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  background: repeating-conic-gradient(
+    from 0deg at 50% 47.5%,
+    rgb(255 255 255 / 0) 0deg 5deg,
+    rgb(255 240 220 / 0.55) 6deg,
+    rgb(255 255 255 / 0) 7.5deg 13deg,
+    rgb(190 220 255 / 0.4) 14deg,
+    rgb(255 255 255 / 0) 15deg 22deg
+  );
+  -webkit-mask: radial-gradient(circle at 50% 47.5%, transparent 0 14%, #000 45%);
+  mask: radial-gradient(circle at 50% 47.5%, transparent 0 14%, #000 45%);
+  filter: blur(3px);
+}
+.prologue.is-sucking .pl-streaks {
+  animation: pl-streaks var(--suck) cubic-bezier(0.6, 0, 1, 0.6) forwards;
+}
+@keyframes pl-streaks {
+  from {
+    opacity: 0;
+    transform: rotate(0deg) scale(1.6);
+  }
+  30% {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-540deg) scale(1);
+  }
+}
+.prologue.is-blackout .pl-streaks {
+  opacity: 0;
+  animation: none;
+}
+@keyframes pl-pull-shake {
+  25% {
+    transform: translate(-6px, 3px);
+  }
+  50% {
+    transform: translate(5px, -4px);
+  }
+  75% {
+    transform: translate(-3px, 2px);
+  }
+}
+.pl-tunnel {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, transparent 0 32%, rgb(0 0 0 / 0.85) 68%, #000 100%);
+  transition: opacity 0.8s ease-out;
+}
+.prologue.is-sucking .pl-tunnel {
+  animation: pl-tunnel var(--suck) cubic-bezier(0.7, 0, 0.95, 0.45) forwards;
+}
+@keyframes pl-tunnel {
+  from {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* 암전: 완전한 어둠. 클래스가 빠지면 가운데부터 어둠이 걷힌다 */
+.prologue.is-blackout .pl-tunnel {
+  opacity: 1;
+  background: #000;
+  animation: none;
+  transition: none;
+}
+
+/* 1단계로 넘어갈 때 어두워진다 */
+.prologue.is-leaving {
+  opacity: 0;
+  transition: opacity 0.9s ease-in;
+}
+/* (예전 is-dim: 탈출 시도 화면에서 계속 씀) 상태 문구는 아래로 내려 가운데 연출 문구와 겹치지 않게 한다 */
 .pl-void.is-dim {
   justify-content: flex-end;
   padding-bottom: 12vh;
@@ -365,7 +643,6 @@
 }
 
 /* ── 갇힘: 문구 연출 ── */
-.pl-question,
 .pl-escape {
   position: absolute;
   inset: 0;
@@ -378,45 +655,59 @@
   color: #f2f2f2;
   pointer-events: none;
 }
-.pl-question {
-  animation: pl-fade 3.6s ease-in-out both;
+.pl-corner,
+.pl-nudge {
+  z-index: 4;
+}
+
+/* F12 를 누른 순간 전기 신호: 화면 전체가 하얗게 두세 번 번쩍 */
+.prologue.is-zap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: #fff;
+  pointer-events: none;
+  animation: pl-zap 0.7s steps(1) forwards;
+}
+@keyframes pl-zap {
+  0% {
+    opacity: 0.95;
+  }
+  15% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.7;
+  }
+  45%,
+  100% {
+    opacity: 0;
+  }
 }
 .pl-escape {
   color: var(--danger);
   font-weight: 700;
   animation: pl-glitch 0.2s steps(2) 6;
 }
-@keyframes pl-fade {
-  0%,
-  100% {
-    opacity: 0;
-  }
-  20%,
-  75% {
-    opacity: 1;
-  }
-}
 /* 구석 안내: 지직거리며 나타난 뒤(약 1.2초) 은은하게 깜빡이며 남는다. 개발자 도구를 열면 숨긴다 */
 .pl-corner {
   position: absolute;
   right: 4vw;
-  bottom: 8vh;
+  top: 8vh;
   margin: 0;
   padding: 0.5em 0.9em;
-  border: 1px solid rgb(95 211 141 / 0.6);
+  border: 1px solid rgb(124 196 255 / 0.6);
   border-radius: var(--radius);
-  background: rgb(4 18 10 / 0.75);
-  color: var(--ok);
+  background: rgb(6 14 24 / 0.82);
+  color: var(--unknown);
   font-size: clamp(1.1rem, 2.2vw, 1.6rem);
   font-weight: 700;
-  text-shadow: 0 0 10px rgb(95 211 141 / 0.8);
-  box-shadow: 0 0 28px rgb(95 211 141 / 0.3);
+  text-shadow: 0 0 10px rgb(124 196 255 / 0.7);
+  box-shadow: 0 0 28px rgb(124 196 255 / 0.25);
   animation:
     pl-corner-in 1.2s steps(1) both,
     pl-corner-pulse 2s ease-in-out 1.2s infinite;
-}
-.pl-corner::before {
-  content: '> ';
 }
 @keyframes pl-corner-in {
   0%,
@@ -470,7 +761,7 @@
   position: absolute;
   left: 50%;
   bottom: var(--space-5);
-  z-index: 3;
+  z-index: 6; /* 질문 오버레이·구석 안내보다 위 */
   width: min(880px, calc(100% - 32px));
   transform: translateX(-50%);
 }
@@ -482,8 +773,34 @@
   .pl-screen.is-glitch,
   .pl-escape,
   .pl-corner,
-  .pl-question,
-  .pl-void p {
+  .pl-post-hidden.is-speaking,
+  .pl-typed::after,
+  .pl-void p,
+  .pl-browser.is-opening,
+  .pl-chip.is-new {
     animation: none;
+  }
+  .prologue.is-leaving {
+    transition: none;
+  }
+  /* 빨려 듦: 흔들림·터널 없이 바로 어두워진다 */
+  .prologue.is-sucking .pl-world,
+  .prologue.is-sucking .pl-monitor,
+  .prologue.is-sucking .pl-bg {
+    transition-duration: 1ms;
+  }
+  .prologue.is-sucking .pl-monitor,
+  .prologue.is-sucking .pl-tunnel,
+  .prologue.is-sucking .pl-world,
+  .prologue.is-sucking .pl-bg,
+  .prologue.is-sucking .pl-streaks {
+    animation: none;
+  }
+  .pl-bg > i {
+    display: none;
+  }
+  /* 전기 신호 번쩍임은 끈다 */
+  .prologue.is-zap::after {
+    display: none;
   }
 }
