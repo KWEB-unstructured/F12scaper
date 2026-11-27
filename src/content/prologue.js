@@ -15,7 +15,8 @@ const n = (text) => ({ speaker: 'narration', text });
 export const LIBRARY = {
   lines: [n('오후 5:42'), n('제출까지 남은 시간은 얼마 없다.'), n('도서관은 조용했고, 컴퓨터 팬 돌아가는 소리만 희미하게 들렸다.')],
   /** 줌인 전 모니터에 떠 있는 화면 */
-  desktopFile: '과제_최종_진짜최종.docx',
+  /** 웹프로그래밍 과제 2: HTML 문서가 화면에 표시되기까지 (파싱 → DOM 트리 → 렌더 트리) 조사 보고서 */
+  desktopFile: '웹프로그래밍_과제2_보고서_최종.docx',
 };
 
 /** 2) 모니터 속 검색 */
@@ -25,16 +26,16 @@ export const MONITOR = {
   searchBrand: 'Lookup',
   placeholder: '검색어를 입력하세요',
   /** 무엇을 치든 이 문장이 한 글자씩 대신 입력된다 */
-  forcedQuery: '브라우저 렌더링 원리 정리',
+  forcedQuery: 'HTML 파싱 DOM 트리 렌더 트리 차이',
   results: [
-    { title: '브라우저 렌더링 과정 — 강의 노트', url: 'https://lecture.example/rendering', desc: 'DOM · CSSOM · 렌더 트리 · 레이아웃 · 페인트 정리' },
-    { title: '브라우저 렌더링 원리 정리 (2019)', url: 'https://blog.example/rendering', desc: '리플로우와 리페인트, 그리고 렌더링 최적화' },
+    { title: '렌더 트리 구성 과정 정리 — 강의 노트', url: 'https://lecture.example/render-tree', desc: 'HTML 파싱 · DOM · CSSOM · 렌더 트리 · 레이아웃 · 페인트' },
+    { title: 'DOM 과 CSSOM, 그리고 렌더링 (2019)', url: 'https://blog.example/dom-cssom', desc: '브라우저 렌더링 과정과 리플로우·리페인트 정리' },
   ],
   /** 수상한 결과: 10년 전 멈춘 개인 블로그의 글 하나 (누르면 이 글이 먼저 열린다) */
   archive: {
-    title: `브라우저는 무엇을 그리고, 크롤러는 무엇을 읽는가 — ${SITE_NAME}`,
-    url: 'http://the-archive.invalid/2016/11/rendering',
-    desc: '2016. 11. 24. — 크롤러는 서버가 보낸 HTML 텍스트만 읽는다. 최근 도메인이 다시 등록되었습니다',
+    title: `[Browser] DOM 트리와 렌더 트리의 차이 — ${SITE_NAME}`,
+    url: 'http://the-archive.invalid/2016/11/dom-render-tree',
+    desc: '2016. 11. 24. — 브라우저는 HTML 문서를 파싱해 DOM 트리를 만들고, 화면에 표시할 노드만 골라 렌더 트리를 만든다. 최근 도메인이 다시 등록되었습니다',
   },
   /** 일반 결과를 눌렀을 때 */
   unreachable: '페이지에 연결할 수 없습니다.',
@@ -44,58 +45,119 @@ export const MONITOR = {
 };
 
 /**
- * 3) 10년 전 멈춘 개인 블로그.
- * 검색 결과의 글이 먼저 열리고 → 메뉴를 둘러보다 → 글 목록의 비공개 글을 열면 F12 를 유도한다.
+ * 3) 10년 전 멈춘 개발자의 개인 블로그 (직접 만든 정적 사이트, 2014~2016).
+ * 검색 결과의 글이 먼저 열리고 → 글 목록·태그를 둘러보다 → 비공개 글 "다음에 올 사람에게"를 열면 F12 를 유도한다.
+ * 글 제목은 "[태그] 핵심 명사형" (태그는 화면이 앞에 붙인다). 본문은 담백한 정보 정리 문체, 비유 없이.
+ * TODO(형씨): 2026-11-27 정씨가 새 블로그 화면에 맞춰 넣은 초안. 글 본문·글 목록·잡담 제목 다듬기
  */
 export const ARCHIVE = {
   origin: 'http://the-archive.invalid',
-  /** 개발자가 쓴 말 */
-  footer: '아직도 여기에 접속할 수 있는 사람이 있군요.',
-  /** 검색 결과에서 눌러서 처음 열리는 글 (새 스토리의 떡밥: 크롤러는 원본 HTML 만 읽는다) */
+  /** 바닥글 (RSS·robots.txt 는 화면이 링크 모양으로 붙인다) */
+  copyright: `© 2014–2016 ${SITE_NAME}`,
+  footerLinks: ['RSS', 'robots.txt'],
+  /** 메뉴 (posts: 글 목록 · tags: 분류 목록 · guestbook: 끊긴 페이지) */
+  menu: { posts: 'Posts', tags: 'Category', guestbook: 'Guestbook' },
+  /** 옆줄 */
+  sidebar: {
+    profileName: 'admin',
+    /** 옆줄 분류 목록 맨 위 줄 (2016년 한국 블로그식 "분류 전체보기 (n)") */
+    tagsTitle: '분류 전체보기',
+    monthsTitle: '지난 글',
+    /** 10년 동안 아무도 없다가 오늘 처음 1명 */
+    visitors: { today: 1, total: 48213 },
+  },
+  /**
+   * 태그와 글 수. 화면에 남은 글보다 수가 많다 (나머지는 지워졌다).
+   * 잡담: 개인 프로젝트(크롤러)가 이상해지는 과정을 적던 글들이 여기 있었다. 제목에는 "크롤러"를 쓰지 않는다.
+   */
+  tags: [
+    { name: 'Browser', count: 4 },
+    { name: 'HTML/CSS', count: 6 },
+    { name: 'JavaScript', count: 7 },
+    { name: 'Network', count: 3 },
+    { name: 'Algorithm', count: 5 },
+    { name: '잡담', count: 9 },
+  ],
+  /** 옆줄 "지난 글" (월별 글 수) */
+  months: [
+    { label: '2016년 11월', count: 4 },
+    { label: '2016년 06월', count: 2 },
+    { label: '2016년 03월', count: 3 },
+    { label: '2015년 12월', count: 2 },
+  ],
+  /**
+   * 글 목록 (최신순). status: locked 비공개 글(누르면 F12 유도) · article 열리는 글 · deleted 지워진 글(제목만 남음)
+   * @type {{ date: string, tag?: string, title: string, status: 'locked' | 'article' | 'deleted' }[]}
+   */
+  posts: [
+    { date: '2016-11-24', title: '다음에 올 사람에게', status: 'locked' },
+    { date: '2016-11-24', tag: 'Browser', title: 'DOM 트리와 렌더 트리의 차이', status: 'article' },
+    // 잡담 3편: 계획 → 이상한 접속(반전 로그 2016-11-02 03:14 와 같은 시각) → 스스로 바뀐 코드(반전 로그 11-17)
+    { date: '2016-11-17', tag: '잡담', title: '작성한 적 없는 커밋', status: 'deleted' },
+    { date: '2016-11-03', tag: '잡담', title: '새벽 3시 14분의 접속 기록', status: 'deleted' },
+    { date: '2016-06-12', tag: 'JavaScript', title: '이벤트 루프(Event Loop) 정리', status: 'deleted' },
+    { date: '2016-06-02', tag: 'Algorithm', title: 'BFS로 링크 따라가기', status: 'deleted' },
+    { date: '2016-03-20', tag: '잡담', title: '올해의 개인 프로젝트', status: 'deleted' },
+    { date: '2016-03-08', tag: 'Network', title: 'HTTP 쿠키와 세션', status: 'deleted' },
+    { date: '2016-03-02', tag: 'HTML/CSS', title: 'display: none 과 visibility: hidden', status: 'deleted' },
+    { date: '2015-12-30', tag: 'Network', title: 'HTTP 상태 코드 정리', status: 'deleted' },
+    { date: '2015-12-14', tag: 'JavaScript', title: '클로저(Closure)란?', status: 'deleted' },
+  ],
+  /**
+   * 검색 결과에서 눌러서 처음 열리는 글. 과제(웹프로그래밍 과제 2: 파싱 → DOM 트리 → 렌더 트리)와 같은 주제다.
+   * 1·2·3·6단계에서 겪을 것(주석, display: none, 스크립트·CSS 로 만든 내용)을 미리 정리해 둔 셈이다.
+   * blocks 종류: h3 소제목 · p 문단 · ol/ul 목록 · code 코드 · img 깨진 그림(10년 사이 외부 이미지가 사라짐)
+   * 문단·목록 안에서 `백틱`으로 감싼 말은 화면이 인라인 코드로 보여 준다
+   */
   article: {
-    path: '/2016/11/rendering',
-    title: '브라우저는 무엇을 그리고, 크롤러는 무엇을 읽는가',
+    path: '/2016/11/dom-render-tree',
+    tag: 'Browser',
+    title: 'DOM 트리와 렌더 트리의 차이',
     date: '2016-11-24',
-    body: [
-      '크롤러는 서버가 보낸 HTML 텍스트만 읽는다. CSS가 칠해진 화면도, 스크립트가 실행된 결과도 보지 못한다.',
-      '브라우저는 다르다. HTML을 받아 화면을 그리고, 스크립트를 실행하고, 그 결과를 남긴다.',
-      '그러니 정말 중요한 것은 브라우저에서 그려지고 실행돼야만 보이는 곳에 두면 된다.',
+    blocks: [
+      { type: 'h3', text: '1. 개요' },
+      { type: 'p', text: '브라우저는 서버에서 받은 HTML 문서를 다음 순서로 처리해 화면에 표시한다.' },
+      {
+        type: 'ol',
+        items: ['HTML 파싱 → DOM 트리 생성', 'CSS 파싱 → CSSOM 생성', 'DOM 트리 + CSSOM → 렌더 트리 생성', '레이아웃(Layout) → 페인트(Paint)'],
+      },
+      { type: 'img', alt: '[그림 1] 렌더링 과정' },
+      { type: 'h3', text: '2. DOM 트리' },
+      {
+        type: 'p',
+        text: 'HTML 파서는 문서를 토큰 단위로 나눈 뒤 노드로 변환한다. 요소뿐 아니라 텍스트와 주석도 노드가 된다. 주석은 화면에 표시되지 않지만 DOM 트리에는 Comment 노드로 남는다.',
+      },
+      { type: 'code', text: '<body>\n  <p>안녕하세요</p>\n  <!-- 메모 -->\n</body>\n\nbody\n├─ p\n│  └─ #text "안녕하세요"\n└─ #comment " 메모 "' },
+      { type: 'h3', text: '3. 렌더 트리' },
+      {
+        type: 'p',
+        text: '렌더 트리는 화면에 표시할 노드만 포함한다. `display: none` 이 적용된 요소는 DOM 트리에는 있지만 렌더 트리에는 포함되지 않는다. `visibility: hidden` 이 적용된 요소는 보이지 않아도 공간을 차지하므로 렌더 트리에 포함된다.',
+      },
+      { type: 'h3', text: '4. 원본 HTML 에 없는 내용' },
+      {
+        type: 'p',
+        text: '스크립트로 추가한 요소와 CSS 의 `::before`, `::after` 로 넣은 `content` 는 서버가 보낸 원본 HTML 에 없다. 페이지 소스 보기(`view-source`)는 원본 HTML 을 보여 주고, 개발자 도구의 Elements 패널은 현재의 DOM 트리를 보여 준다.',
+      },
+      { type: 'h3', text: '5. 정리' },
+      {
+        type: 'ul',
+        items: ['원본 HTML: 서버가 보낸 텍스트 그대로', 'DOM 트리: 원본 HTML 을 파싱한 결과 + 스크립트가 바꾼 내용', '렌더 트리: DOM 트리 중 화면에 표시할 노드만'],
+      },
+      { type: 'p', text: '따라서 원본 HTML 만 읽는 프로그램은 스크립트나 CSS 로 만들어진 내용을 확인할 수 없다.' },
     ],
   },
-  /** 메뉴 → 페이지 */
-  pages: {
-    welcome: {
-      menu: 'Welcome',
-      path: '/',
-      title: SITE_NAME,
-      body: ['개발하면서 배운 것을 적어 두는 개인 지식 블로그입니다.', '마지막 글: 2016년 11월 24일'],
-    },
-    archive: {
-      menu: 'Archive',
-      path: '/archive',
-      title: '글 목록',
-      /** 글 목록. locked = 비공개 글(누르면 F12 유도), deleted = 지워진 글 (제목만 떡밥) */
-      posts: [
-        { date: '2016-11-24', title: '다음에 올 사람에게', status: 'locked' },
-        { date: '2016-11-24', title: '브라우저는 무엇을 그리고, 크롤러는 무엇을 읽는가', status: 'article' },
-        { date: '2016-03-02', title: '크롤러 때문에 골치다', status: 'deleted' },
-        { date: '2016-02-14', title: '끝없이 이어지는 페이지 설계 메모', status: 'deleted' },
-        { date: '2015-12-30', title: '정적 사이트 배포 정리', status: 'deleted' },
-      ],
-    },
-    community: {
-      menu: 'Community',
-      path: '/community',
-      title: '404 Not Found',
-      body: ['요청한 페이지는 존재하지 않습니다.', '마지막 게시글: 2016년 11월 24일 · 작성자 없음'],
-    },
-    about: {
-      menu: 'About',
-      path: '/about',
-      title: '소개',
-      body: ['블로그 주인: (비공개)', '웹과 크롤링을 공부하는 개발자입니다.', '문의: —'],
-    },
-  },
+  /** 글 아래 이전·다음 글 (글 목록에서 바로 아래·위 글). 다음 글 = 비공개 글로 가는 길 */
+  prevLabel: '이전 글',
+  nextLabel: '다음 글',
+  /** 댓글란 (댓글 없이 비어 있다) */
+  comments: { title: '댓글', empty: '댓글을 불러올 수 없습니다.' },
+  /** 외부 이미지가 사라진 자리 */
+  brokenImage: '이미지를 불러올 수 없습니다',
+  /** 끊긴 페이지 (방명록) */
+  notFound: { title: '404 Not Found', body: '요청한 페이지를 찾을 수 없습니다.' },
+  postsTitle: '전체 글',
+  /** @param {string} tag */
+  tagPageTitle: (tag) => `'${tag}' 분류의 글`,
   /** 지워진 글을 눌렀을 때 */
   deleted: '삭제되었거나 존재하지 않는 글입니다.',
   /** 비공개 글. 내용은 화면에 표시되지 않는다 */
@@ -103,22 +165,28 @@ export const ARCHIVE = {
     path: '/2016/11/to-the-next',
     title: '다음에 올 사람에게',
     date: '2016-11-24',
-    body: '이 글은 화면에 표시되지 않습니다.',
+    /** 비공개 글 본문 자리에 처음부터 적혀 있는 한 줄 (개발자가 남긴 말). TODO(형씨): 다듬기 */
+    body: '이 글은 지워지지 않았습니다. 개발자 화면을 참조하세요.',
     badge: '비공개',
   },
-  /** 블로그 장면의 주인공 독백 */
+  /**
+   * 블로그 장면의 주인공 독백.
+   * 글을 끝까지 내려 "다음 글"(= 비공개 글 "다음에 올 사람에게")을 누르도록 이끈다:
+   * enter → (한동안 안 내려가면 scrollHint) → 글 아래 이전·다음 글이 보이면 nextPost
+   */
+  scrollHintAfterMs: 15_000,
   lines: {
-    enter: [n('마지막 글이 2016년…? 10년 전에 멈춘 블로그네.')],
-    locked: [n('"다음에 올 사람에게"…? 제목만 있고 내용이 없어.')],
-    lure: [n('개발자 도구… F12 말하는 건가?')],
+    enter: [n('마지막 글이 2016년…? 10년 전에 멈춘 블로그네.'), n('그래도 과제 주제랑 딱 맞는 글이야. 끝까지 읽어 보자.')],
+    scrollHint: [n('글이 아래로 더 이어지네. 스크롤해서 끝까지 내려가 보자.')],
+    nextPost: [n('다음 글이… "다음에 올 사람에게"?'), n('과제랑은 상관없어 보이는데, 이 블로그의 마지막 글이야. 한번 눌러 볼까.')],
+    locked: [n('"다음에 올 사람에게"…? 본문 대신 한 줄뿐이야.')],
+    // 본문 한 줄을 보고 F12 에 닿는다 (화면 구석 안내 없이 독백으로만)
+    lure: [n('개발자 화면을 참조하라니… 개발자 도구를 말하는 건가?'), n('개발자 도구… F12였지.')],
   },
 };
 
 /** 비공개 글을 연 뒤 F12 를 유도하는 문구. 개발자가 미리 숨겨 둔 말이라 개발자(정체를 숨긴 "???")로 표시한다 */
 export const LURE = {
-  /** 비공개 글의 빈 내용 상자가 지직거리며 이 문장으로 바뀌어 한 글자씩 써진다 */
-  question: '화면에 표시되는 정보가 전부라고 생각하십니까?',
-  corner: '개발자 도구를 확인하세요.',
   /** F12 를 오래 안 누를 때 커서 근처 안내 (ms 뒤) */
   nudgeAfterMs: 30_000,
   nudge: 'F12 · Ctrl+Shift+I (Mac: Cmd+Option+I)',

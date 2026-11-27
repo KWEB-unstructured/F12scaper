@@ -6,7 +6,7 @@
 
 | 항목 | 방법 | 결과 |
 |---|---|---|
-| 광고 차단 — 요청 | EasyList · EasyPrivacy · uBlock 기본 목록(filters·privacy·badware·unbreak) · Peter Lowe · AdGuard Korean 에 실제 요청 주소를 대조. `/api/start` `/api/stage5` `/api/ranking` `/api/verify` `/system/terminate`, 번들 JS·CSS, `/stages/stage7-flash.js`, `/prologue/library-bg.png` | **막히는 요청 0개** |
+| 광고 차단 — 요청 | EasyList · EasyPrivacy · uBlock 기본 목록(filters·privacy·badware·unbreak) · Peter Lowe · AdGuard Korean 에 실제 요청 주소를 대조. `/api/start` `/api/stage5` `/api/ranking` `/api/verify` `/system/terminate`, 번들 JS·CSS, `/stages/stage7-flash.js`, `/prologue/library-bg.webp` | **막히는 요청 0개** |
 | 광고 차단 — 화면 | 시작 화면·1~8단계를 실제로 그린 뒤 DOM 의 클래스·id 로 숨김 규칙(173개)을 뽑아 `querySelector` 로 대조 | **숨겨지는 요소 0개** |
 | 크롬 최신 | 1~8단계 화면, 5단계 Network 퍼즐, 8단계 콘솔 탈출(오답·형식 오류·정답 → 결말 → 클리어), 위조 요청, 오답 50회 → 429 | 통과 |
 | 엣지 최신 | 1~8단계 화면 + 광고 차단 대조, 8단계 콘솔 탈출 전체 흐름 (로컬 mock 서버) | 통과 |

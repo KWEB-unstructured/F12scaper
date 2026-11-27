@@ -31,7 +31,7 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  /* 글꼴: 웹폰트는 Nanum Gothic Coding 하나만 쓴다 (index.html 에서 불러옴) */
+  /* 글꼴: 웹폰트는 Nanum Gothic Coding(화면 전반) · Nanum Gothic(프롤로그 블로그 본문, 2016년 느낌) 두 개 (index.html 에서 불러옴) */
   --font-mono: 'Nanum Gothic Coding', ui-monospace, 'D2Coding', Consolas, monospace;
   --font-sans: system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --fs-sm: 0.875rem;
@@ -275,7 +275,7 @@ input:focus {
 .ts-bg {
   position: absolute;
   inset: -24px;
-  background: url('/prologue/library-bg.png') center / cover no-repeat;
+  background: url('/prologue/library-bg.webp') center / cover no-repeat;
   filter: blur(6px) brightness(0.32) saturate(0.75);
   animation:
     ts-drift 40s ease-in-out infinite alternate,
@@ -560,27 +560,6 @@ input:focus {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-/* 8칸 진행 점: 푼 단계 초록, 지금 단계 앰버 */
-.steps {
-  display: flex;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.steps li {
-  width: 16px;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--border);
-}
-.steps li.done {
-  background: var(--ok);
-}
-.steps li.now {
-  background: var(--accent);
-  box-shadow: 0 0 8px rgb(245 165 36 / 0.6);
 }
 /* 인증 키 조각: 7칸 중 모은 만큼 채운다 */
 .pieces {
@@ -1223,7 +1202,6 @@ tr.mine {
     margin-left: auto;
   }
   .hud-kicker,
-  .steps,
   .site-nav {
     display: none;
   }
@@ -1272,5 +1250,55 @@ tr.mine {
   .alert-edge.is-grant {
     animation: none;
     box-shadow: inset 0 0 90px 6px rgb(95 211 141 / 0.22);
+  }
+}
+
+/* ── 크롤러 흔적: 통과 직후 고쳐 둔 퍼즐 화면을 되돌릴 때 (screens/stage.js revertPuzzle) ──
+   퍼즐 영역이 붉게 지직거리다가 원래 모습으로 돌아간다. 0.65초 + 원래대로 0.35초 */
+.puzzle.is-reverting {
+  position: relative;
+  animation: puzzle-revert 0.65s steps(2) both;
+}
+.puzzle.is-reverting::after {
+  content: '[crawler] 복구 중…';
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-4);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: rgb(40 8 8 / 0.85);
+  color: var(--danger);
+  font-size: var(--fs-sm);
+}
+@keyframes puzzle-revert {
+  0% {
+    filter: none;
+    transform: none;
+  }
+  20% {
+    filter: hue-rotate(-40deg) saturate(3) contrast(1.4);
+    transform: translateX(-4px) skewX(2deg);
+  }
+  40% {
+    filter: brightness(1.6) saturate(0);
+    transform: translateX(5px);
+  }
+  60% {
+    filter: hue-rotate(-40deg) saturate(3);
+    transform: translateX(-2px) skewX(-3deg);
+  }
+  80% {
+    filter: blur(1px) brightness(0.6);
+    transform: translateX(2px);
+  }
+  100% {
+    filter: none;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .puzzle.is-reverting {
+    animation: none;
   }
 }

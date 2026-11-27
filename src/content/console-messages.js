@@ -9,7 +9,7 @@
 /** %c 스타일 (메시지의 style 키) */
 export const CONSOLE_STYLES = {
   developer: 'color:#1558b0; font-weight:bold', // 짙은 파랑 (옅은 하늘색은 밝은 콘솔에서 잘 안 보였다)
-  crawler: 'color:#7d8b9c',
+  crawler: 'color:#7d8b9c; font-weight:bold', // 회색 굵게 (보통 굵기는 콘솔에서 흐려서 잘 안 보였다)
 };
 
 /**
@@ -37,8 +37,8 @@ export const CONSOLE_MESSAGES = {
       '첫 번째 메모는 이 페이지 속에 숨겨 뒀습니다. Elements 탭에서 페이지를 들여다보세요.',
     ],
   },
-  /** 4. 크롤러의 복선. 블로그의 Archive 메뉴를 열었을 때 */
-  crawler: { style: 'crawler', tag: '[crawler]', lines: ['visited: /archive'] },
+  /** 4. 크롤러의 복선. 블로그의 글 목록(Posts)을 열었을 때 */
+  crawler: { style: 'crawler', tag: '[crawler]', lines: ['visited: /posts'] },
 };
 
 /** 갇힌 뒤 출력 순서와 간격 (ms, 앞 메시지 기준) */

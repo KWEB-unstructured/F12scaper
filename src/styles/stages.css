@@ -61,7 +61,7 @@
 }
 
 /* ── 6단계 (정씨): 375px 이하에서만 보이는 문장 ──
-   "모바일 전용 게시판". 비공개 글의 내용(열람 코드)은 HTML 에 없고,
+   "모바일 전용 게시판". 비공개 글의 내용(개발자 메시지 + 여섯 번째 조각)은 HTML 에 없고,
    아래 @media (max-width: 375px) 안의 .board-secret::after 로만 붙는다.
    정답을 바꾸면 그 content 문자열과 stage6.js 의 answerHash 를 같이 바꾼다. */
 .board {
@@ -153,7 +153,7 @@
     display: none;
   }
   .board-secret::after {
-    content: '익명 — 폰으로만 볼 수 있게 숨겨 뒀어요.\A열람 코드: test6';
+    content: '이 문장은 HTML 에 없어요. 그래서 그들은 읽지 못하죠.\A여섯 번째 조각: test6';
     white-space: pre-line;
     color: var(--fg);
     letter-spacing: normal;
